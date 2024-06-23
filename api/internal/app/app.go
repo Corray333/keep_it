@@ -7,6 +7,8 @@ import (
 	"github.com/Corray333/keep_it/internal/domains/user"
 	"github.com/Corray333/keep_it/internal/global_storage"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/spf13/viper"
 )
 
@@ -21,6 +23,14 @@ type Controller interface {
 
 func New() *App {
 	router := chi.NewMux()
+	router.Use(middleware.Logger)
+
+	// TODO: get allowed origins, headers and methods from cfg
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedHeaders: []string{"Authorization"},
+		MaxAge:         300,
+	}))
 	// TODO: add timeouts
 	server := http.Server{
 		Addr:    "0.0.0.0:" + viper.GetString("port"),

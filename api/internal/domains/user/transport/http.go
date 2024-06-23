@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/Corray333/keep_it/internal/domains/user/storage"
 	"github.com/Corray333/keep_it/internal/domains/user/types"
 	"github.com/Corray333/keep_it/pkg/server/auth"
 	"github.com/go-chi/chi/v5"
@@ -20,11 +19,19 @@ type Storage interface {
 	RefreshToken(id int, agent string, refresh string) (string, string, error)
 	SelectUser(id string) (types.User, error)
 	UpdateUser(user types.User) error
+	CheckUsername(username string) (bool, error)
+	GetCodeRequest(username string) (*types.CodeQuery, error)
 }
 
-func RequestCode(store *Storage) http.HandlerFunc{
+const (
+	CodeRequestTypeSignUp = iota + 1
+	CodeRequestTypeLogIn
+	CodeRequestTypeChangePassword
+)
+
+func RequestCodeByEmail(store *Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		
+
 	}
 }
 
@@ -32,6 +39,11 @@ type LogInResponse struct {
 	Authorization string     `json:"authorization"`
 	Refresh       string     `json:"refresh"`
 	User          types.User `json:"user,omitempty"`
+}
+
+type SignUpRequest struct {
+	types.User
+	Code string `json:"code"`
 }
 
 // SignUp registers a new user and returns the user ID, refresh token, and access token.
@@ -43,21 +55,39 @@ type LogInResponse struct {
 // @Param user body types.User true "User details"
 // @Success 200 {object} LogInResponse
 // @Router /api/users//signup [post]
-func SignUp(store *storage.UserStorage) http.HandlerFunc {
+func SignUp(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user := types.User{}
-		user.Avatar = "/images/avatars/default_avatar.png"
+		request := SignUpRequest{}
+		request.Avatar = "/images/avatars/default_avatar.png"
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Failed to read request body", http.StatusBadRequest)
 			slog.Error("Failed to read request body: " + err.Error())
 			return
 		}
-		if err := json.Unmarshal(body, &user); err != nil {
+		if err := json.Unmarshal(body, &request); err != nil {
 			http.Error(w, "Failed to unmarshal request body", http.StatusBadRequest)
 			slog.Error("Failed to unmarshal request body: " + err.Error())
 			return
 		}
+		query, err := store.GetCodeRequest(request.Username)
+		if err != nil {
+			http.Error(w, "Failed to find verification code: ", http.StatusInternalServerError)
+			slog.Error("Failed to find verification code: " + err.Error())
+			return
+		}
+		if query.TypeID != CodeRequestTypeSignUp {
+			http.Error(w, "Wrong request type", http.StatusBadRequest)
+			slog.Error("Wrong type of code request: has to be sign up (1)")
+			return
+		}
+		if query.Code != request.Code {
+			http.Error(w, "Wrong verification code", http.StatusForbidden)
+			return
+		}
+		user := request.User
+		user.TelegramUsername = query.TG
+
 		id, refresh, err := store.InsertUser(user, r.UserAgent())
 		if err != nil {
 			http.Error(w, "Failed to insert user", http.StatusInternalServerError)
@@ -252,6 +282,63 @@ func UpdateUser(store Storage) http.HandlerFunc {
 		if err := store.UpdateUser(user); err != nil {
 			http.Error(w, "Failed to update user", http.StatusInternalServerError)
 			slog.Error("Failed to update user: " + err.Error())
+			return
+		}
+	}
+}
+
+type CheckUsernameResponse struct {
+	Found bool `json:"found"`
+}
+
+func CheckUsername(store Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		username := r.URL.Query().Get("username")
+		res, err := store.CheckUsername(username)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			slog.Error("error during checking username in db: " + err.Error())
+			return
+		}
+		if err := json.NewEncoder(w).Encode(CheckUsernameResponse{
+			Found: res,
+		}); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			slog.Error("error during marshalling check username response: " + err.Error())
+			return
+		}
+	}
+}
+
+type CheckCodeRequest struct {
+	Username string `json:"username"`
+	Code     string `json:"code"`
+}
+type CheckCodeResponse struct {
+	Valid bool `json:"valid"`
+}
+
+func CheckCode(store Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := &CheckCodeRequest{}
+
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			slog.Error("error during unmarshalling check code request: " + err.Error())
+			return
+		}
+
+		codeQuery, err := store.GetCodeRequest(req.Username)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			slog.Error("error during checking code in db: " + err.Error())
+			return
+		}
+		if err := json.NewEncoder(w).Encode(CheckCodeResponse{
+			Valid: req.Code == codeQuery.Code,
+		}); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			slog.Error("error during marshalling check code response: " + err.Error())
 			return
 		}
 	}

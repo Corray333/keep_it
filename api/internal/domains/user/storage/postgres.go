@@ -5,18 +5,21 @@ import (
 
 	"github.com/Corray333/keep_it/internal/domains/user/types"
 	"github.com/Corray333/keep_it/pkg/server/auth"
+	"github.com/go-redis/redis"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 type UserStorage struct {
-	db *sqlx.DB
+	db    *sqlx.DB
+	redis *redis.Client
 }
 
 // New creates a new storage and tables
-func NewStorage(db *sqlx.DB) *UserStorage {
+func NewStorage(db *sqlx.DB, redis *redis.Client) *UserStorage {
 	return &UserStorage{
-		db: db,
+		db:    db,
+		redis: redis,
 	}
 }
 
@@ -34,8 +37,8 @@ func (s *UserStorage) InsertUser(user types.User, agent string) (int, string, er
 	}
 
 	rows := tx.QueryRow(`
-		INSERT INTO users (username, email, password, avatar) VALUES ($1, $2, $3, $4) RETURNING user_id;
-	`, user.Username, user.Email, user.Password, "api/images/avatars/default_avatar.png")
+		INSERT INTO users (username, email, tg_username, password, avatar) VALUES ($1, $2, $3, $4, $5) RETURNING user_id;
+	`, user.Username, user.Email, user.TelegramUsername, user.Password, "/images/avatars/default_avatar.png")
 
 	if err := rows.Scan(&user.ID); err != nil {
 		return -1, "", err
@@ -149,11 +152,17 @@ func (s *UserStorage) SelectUser(id string) (types.User, error) {
 }
 
 func (s *UserStorage) UpdateUser(user types.User) error {
-	fmt.Println()
-	fmt.Println(user)
-	fmt.Println()
 	_, err := s.db.Queryx(`
 		UPDATE users SET username = $1, email = $2, avatar = $3 WHERE user_id = $4;
 	`, user.Username, user.Email, user.Avatar, user.ID)
 	return err
+}
+
+func (s *UserStorage) CheckUsername(username string) (bool, error) {
+	res := false
+	err := s.db.QueryRow("SELECT COUNT(*) > 0 AS exists FROM users WHERE username = $1", username).Scan(&res)
+	if err != nil {
+		return false, err
+	}
+	return res, nil
 }
