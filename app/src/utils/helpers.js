@@ -7,20 +7,18 @@ function getCookie(name) {
     if (parts.length === 2) return parts.pop().split(';').shift()
 }
 
-const refreshTokens = async () => {
+const refreshTokens = async (store) => {
     try {
-        let { data } = await axios.get( `/api/users/refresh`, {
-            headers: {
-                'Refresh': localStorage.getItem('Refresh'),
-            }
+        let { data } = await axios.get( `${import.meta.env.VITE_API_URL}/users/refresh`, {
+            withCredentials: true
         })
-
-        localStorage.setItem('Authorization', data.authorization)
-        localStorage.setItem('Refresh', data.refresh)
+        store.commit("setAccess", data.authorization)
     } catch (error) {
-        alert('Error refreshing tokens')
-        const router = useRouter()
-        router.push('/login')
+        console.log(error)
+        alert(error)
+        // alert('Error refreshing tokens')
+        // const router = useRouter()
+        // router.push('/login')
     }
 }
 

@@ -23,7 +23,7 @@ func init() {
 	secretKey = []byte(os.Getenv("SECRET_KEY"))
 }
 
-func NewAdminAuthMiddleware() func(next http.Handler) http.Handler {
+func NewAuthMiddleware() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		slog.Info("auth middleware enabled")
 
@@ -87,20 +87,26 @@ func VerifyToken(tokenString string) error {
 type Credentials struct {
 	Email string `json:"email"`
 	ID    int    `json:"id,omitempty" db:"user_id"`
+	Exp   time.Time
 }
 
-func ExtractCredentials(tokenString string) (Credentials, error) {
+func ExtractCredentials(tokenString string) (*Credentials, error) {
 	claims := jwt.MapClaims{}
-	_, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return secretKey, nil
 	})
 	if err != nil {
-		return Credentials{}, err
+		return nil, err
+	}
+	exp, err := token.Claims.GetExpirationTime()
+	if err != nil {
+		return nil, err
 	}
 	credentials := Credentials{
-		ID: int(claims["id"].(float64)),
+		ID:  int(claims["id"].(float64)),
+		Exp: exp.Time,
 	}
-	return credentials, nil
+	return &credentials, nil
 }
 
 type Storage interface {

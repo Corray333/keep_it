@@ -4,6 +4,7 @@ import (
 	"github.com/Corray333/keep_it/internal/domains/user/storage"
 	"github.com/Corray333/keep_it/internal/domains/user/transport"
 	"github.com/Corray333/keep_it/internal/global_storage"
+	"github.com/Corray333/keep_it/pkg/server/auth"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -23,5 +24,5 @@ func (c Controller) Init(router *chi.Mux, storeGlobal global_storage.Storage) {
 	router.Get("/api/users/refresh", transport.RefreshAccessToken(store))
 	router.Get("/api/users/check-username", transport.CheckUsername(store))
 	router.Post("/api/users/check-code", transport.CheckCode(store))
-	// router.With(auth.NewAdminAuthMiddleware()).Get("/api/users/{id}", transport.GetUser(store))
+	router.With(auth.NewAuthMiddleware()).Get("/api/users/{id}", transport.GetUser(store))
 }

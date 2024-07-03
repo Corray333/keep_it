@@ -10,7 +10,7 @@ import (
 )
 
 func GenerateVerificationCode() string {
-	const charset = "0123456789"
+	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	rand.Seed(time.Now().UnixNano())
 	code := make([]byte, 4)
 	for i := range code {
@@ -33,7 +33,7 @@ func FormatPhoneNumber(userPhone string, savedPhone string) (string, error) {
 		break
 	}
 	if f {
-		return "", fmt.Errorf("Something went wrong, try to use sms verification.")
+		return "", fmt.Errorf("something went wrong, try to use sms verification")
 	}
 
 	// Check if the number is valid

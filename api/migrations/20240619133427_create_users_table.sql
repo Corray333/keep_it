@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users
     tg_username text COLLATE pg_catalog."default" UNIQUE,
     password character varying(60) COLLATE pg_catalog."default" NOT NULL,
     avatar text COLLATE pg_catalog."default",
-    ref_code VARCHAR(6),
+    ref_code VARCHAR(6) NOT NULL,
     CONSTRAINT users_pkey PRIMARY KEY (user_id),
     CONSTRAINT users_email_key UNIQUE (email)
 );

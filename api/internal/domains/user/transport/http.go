@@ -2,16 +2,21 @@ package transport
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/Corray333/keep_it/internal/domains/user/types"
 	"github.com/Corray333/keep_it/pkg/server/auth"
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/exp/rand"
 )
+
+const MaxFileSize = 5 << 20
 
 type Storage interface {
 	InsertUser(user types.User, agent string) (int, string, error)
@@ -54,7 +59,7 @@ type SignUpRequest struct {
 // @Produce  json
 // @Param user body types.User true "User details"
 // @Success 200 {object} LogInResponse
-// @Router /api/users//signup [post]
+// @Router /api/users/signup [post]
 func SignUp(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		request := SignUpRequest{}
@@ -96,6 +101,25 @@ func SignUp(store Storage) http.HandlerFunc {
 		}
 		user.ID = id
 
+		creds, err := auth.ExtractCredentials(refresh)
+		if err != nil {
+			http.Error(w, "Failed to insert user", http.StatusInternalServerError)
+			slog.Error("Failed to insert user: " + err.Error())
+			return
+		}
+
+		cookie := http.Cookie{
+			Name:     "Refresh",
+			Value:    refresh,
+			Expires:  creds.Exp,
+			HttpOnly: true,
+			Path:     "/",
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
+		}
+
+		http.SetCookie(w, &cookie)
+
 		token, err := auth.CreateToken(user.ID, auth.AccessTokenLifeTime)
 		if err != nil {
 			http.Error(w, "Failed to create token", http.StatusInternalServerError)
@@ -103,9 +127,9 @@ func SignUp(store Storage) http.HandlerFunc {
 			return
 		}
 		user.Password = ""
-		if err := json.NewEncoder(w).Encode(LogInResponse{Authorization: token,
-			Refresh: refresh,
-			User:    user,
+		if err := json.NewEncoder(w).Encode(LogInResponse{
+			Authorization: token,
+			User:          user,
 		}); err != nil {
 			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 			slog.Error("Failed to send response: " + err.Error())
@@ -125,6 +149,8 @@ func SignUp(store Storage) http.HandlerFunc {
 // @Router /api/users/login [post]
 func LogIn(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO: check and remove expired tokens
+
 		user := types.User{}
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -145,6 +171,29 @@ func LogIn(store Storage) http.HandlerFunc {
 		}
 		user.ID = id
 
+		fmt.Println()
+		fmt.Println("Login refresh: ", refresh)
+		fmt.Println()
+
+		creds, err := auth.ExtractCredentials(refresh)
+		if err != nil {
+			http.Error(w, "Failed to insert user", http.StatusInternalServerError)
+			slog.Error("Failed to insert user: " + err.Error())
+			return
+		}
+
+		cookie := http.Cookie{
+			Name:     "Refresh",
+			Value:    refresh,
+			Expires:  creds.Exp,
+			HttpOnly: true,
+			Path:     "/",
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
+		}
+
+		http.SetCookie(w, &cookie)
+
 		token, err := auth.CreateToken(user.ID, auth.AccessTokenLifeTime)
 		if err != nil {
 			http.Error(w, "Failed to create token", http.StatusInternalServerError)
@@ -154,7 +203,6 @@ func LogIn(store Storage) http.HandlerFunc {
 		user.Password = ""
 		if err := json.NewEncoder(w).Encode(LogInResponse{
 			Authorization: token,
-			Refresh:       refresh,
 			User:          user,
 		}); err != nil {
 			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
@@ -175,22 +223,56 @@ func LogIn(store Storage) http.HandlerFunc {
 // @Router /api/users/refresh_token [get]
 func RefreshAccessToken(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		refresh := r.Header.Get("Refresh")
-		creds, err := auth.ExtractCredentials(r.Header.Get("Refresh"))
+		refreshCookie, err := r.Cookie("Refresh")
+		if err != nil {
+			http.Error(w, "Failed to get refresh cookie", http.StatusUnauthorized)
+			slog.Error("Failed to get refresh cookie: " + err.Error())
+			return
+		}
+		if refreshCookie.Value == "" {
+			http.Error(w, "Failed to get refresh cookie", http.StatusUnauthorized)
+			slog.Error("Failed to get refresh cookie")
+			return
+		}
+
+		fmt.Println()
+		fmt.Println("Cookie: ", refreshCookie.Value)
+		fmt.Println()
+
+		creds, err := auth.ExtractCredentials(refreshCookie.Value)
 		if err != nil {
 			http.Error(w, "Failed to extract credentials", http.StatusBadRequest)
 			slog.Error("Failed to extract credentials: " + err.Error())
 			return
 		}
-		access, refresh, err := store.RefreshToken(creds.ID, r.UserAgent(), refresh)
+		access, refresh, err := store.RefreshToken(creds.ID, r.UserAgent(), refreshCookie.Value)
 		if err != nil {
 			http.Error(w, "Failed to refresh token", http.StatusInternalServerError)
 			slog.Error("Failed to refresh token: " + err.Error())
 			return
 		}
+
+		creds, err = auth.ExtractCredentials(refresh)
+		if err != nil {
+			http.Error(w, "Failed to insert user", http.StatusInternalServerError)
+			slog.Error("Failed to insert user: " + err.Error())
+			return
+		}
+
+		cookie := http.Cookie{
+			Name:     "Refresh",
+			Value:    refresh,
+			Expires:  creds.Exp,
+			HttpOnly: true,
+			Path:     "/",
+			SameSite: http.SameSiteNoneMode,
+			Secure:   true,
+		}
+
+		http.SetCookie(w, &cookie)
+
 		if err := json.NewEncoder(w).Encode(LogInResponse{
 			Authorization: access,
-			Refresh:       refresh,
 		}); err != nil {
 			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 			slog.Error("Failed to encode response: " + err.Error())
@@ -211,12 +293,24 @@ func RefreshAccessToken(store Storage) http.HandlerFunc {
 func GetUser(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId := chi.URLParam(r, "id")
+		if userId == "0" {
+			creds, err := auth.ExtractCredentials(r.Header.Get("Authorization"))
+			if err != nil {
+				http.Error(w, "Failed to extract credentials", http.StatusBadRequest)
+				slog.Error("Failed to extract credentials: " + err.Error())
+				return
+			}
+			userId = strconv.Itoa(int(creds.ID))
+		}
+
 		user, err := store.SelectUser(userId)
 		if err != nil {
 			http.Error(w, "Failed to get user", http.StatusInternalServerError)
 			slog.Error("Failed to get user: " + err.Error())
 			return
 		}
+
+		// TODO: create this struct
 		if err := json.NewEncoder(w).Encode(struct {
 			User types.User `json:"user"`
 		}{
@@ -287,10 +381,21 @@ func UpdateUser(store Storage) http.HandlerFunc {
 	}
 }
 
+// CheckUsernameResponse represents the response structure for checking a username
+// @Description Check if a username exists
 type CheckUsernameResponse struct {
 	Found bool `json:"found"`
 }
 
+// CheckUsername is the handler function for checking the existence of a username
+// @Summary Check if a username exists
+// @Description Check if a username exists in the database
+// @Tags users
+// @Produce json
+// @Param username query string true "Username to check"
+// @Success 200 {object} CheckUsernameResponse
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /check-username [get]
 func CheckUsername(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := r.URL.Query().Get("username")
@@ -310,14 +415,29 @@ func CheckUsername(store Storage) http.HandlerFunc {
 	}
 }
 
+// CheckCodeRequest represents the request structure for checking a code
+// @Description Request structure for checking a code
 type CheckCodeRequest struct {
 	Username string `json:"username"`
 	Code     string `json:"code"`
 }
+
+// CheckCodeResponse represents the response structure for checking a code
+// @Description Response structure for checking a code
 type CheckCodeResponse struct {
 	Valid bool `json:"valid"`
 }
 
+// CheckCode is the handler function for checking the validity of a code
+// @Summary Check if a code is valid
+// @Description Check if the provided code is valid for the given username
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param request body CheckCodeRequest true "Request body for checking code"
+// @Success 200 {object} CheckCodeResponse
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /check-code [post]
 func CheckCode(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := &CheckCodeRequest{}
@@ -341,5 +461,51 @@ func CheckCode(store Storage) http.HandlerFunc {
 			slog.Error("error during marshalling check code response: " + err.Error())
 			return
 		}
+	}
+}
+
+func UploadImage() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO: add image compression
+		if err := r.ParseMultipartForm(MaxFileSize); err != nil {
+			slog.Error("error parsing multipart form: " + err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		file, header, err := r.FormFile("file")
+		if err != nil {
+			slog.Error("error getting file: " + err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer file.Close()
+
+		randomStr := ""
+		for i := 0; i < 10; i++ {
+			randomStr += strconv.Itoa(rand.Intn(10))
+		}
+		fileName := randomStr + filepath.Ext(header.Filename)
+		newFile, err := os.Create("../files/images/" + fileName)
+		if err != nil {
+			slog.Error("error creating file: " + err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer newFile.Close()
+		if _, err := io.Copy(newFile, file); err != nil {
+			slog.Error("error copying file: " + err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(struct {
+			URL string `json:"url"`
+		}{
+			URL: "/images/" + fileName,
+		}); err != nil {
+			slog.Error("error encoding or sending file name: " + err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+
 	}
 }

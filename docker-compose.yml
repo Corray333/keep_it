@@ -12,6 +12,17 @@ services:
     command: make run
     depends_on:
       - db
+  
+  authbot:
+    build: 
+      context: ./authbot
+      dockerfile: Dockerfile
+    volumes:
+      - ./authbot:/app
+    command: make run
+    depends_on:
+      - db
+      - redis
 
   app:
     image: node:latest

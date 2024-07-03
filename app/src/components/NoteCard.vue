@@ -1,8 +1,54 @@
 <script setup>
 import { Icon } from '@iconify/vue'
-import { ref } from 'vue'
+import { formToJSON } from 'axios';
+import { ref, computed } from 'vue'
 
 const props = defineProps(['note'])
+
+const content = computed(()=>{
+    const result = []
+    for (let note of props.note.content){
+        if (note.rich_text){
+            let temp = {
+                type: note.type,
+                rich_text:[]
+            }
+            let i = 0
+            for (let block of note.rich_text.meta){
+                if (i<block.offset){
+                    temp.rich_text.push({
+                        plain_text: note.rich_text.plain_text.substr(i, block.offset),
+                        text_style:{
+                        }
+                    })
+                }
+                temp.rich_text.push({
+                    plain_text: note.rich_text.plain_text.substr(block.offset, block.offset + block.length),
+                    text_style:{
+                        color: block.color,
+                        width:block.width,
+                        italic:block.italic,
+                        underline:block.underline,
+                        cross_out:block.cross_out
+                    }
+                })
+                i += block.length
+            }
+            if (i < note.rich_text.plain_text.length){
+                temp.rich_text.push({
+                        plain_text: note.rich_text.plain_text.substr(i, note.rich_text.plain_text.length),
+                        text_style:{
+                        }
+                    })
+            }
+            result.push(temp)
+        } else {
+            result.push(note)
+        }
+    }
+    console.log(result)
+    return result
+})
 
 
 </script>
@@ -25,32 +71,44 @@ const props = defineProps(['note'])
             </div>
        </div>
        <div class="flex gap-2 p-2 text-xs">
-           <img :src="note.cover" alt="Note cover" class=" w-28 h-28 object-cover rounded-md">
-           <div class="content h-28 overflow-hidden">
-                <div v-for="(block, i) of note.content" :key="i">
-                    <p v-if="block.type=='h1'" class="flex text-sm font-bold">
-                        <p v-for="(text, j) of block.rich_text" :key="j" 
+           <img :src="note.cover" alt="Note cover" class=" aspect-square w-28 h-28 object-cover rounded-md">
+           <div class="content h-28 w-full overflow-hidden">
+     
+                <div v-for="(block, i) of content" :key="i">
+                    <p v-if="block.type=='h1'" class=" text-sm font-bold">
+                        <span v-for="(text, j) of block.rich_text" :key="j" 
                         :style="
-                            (text.text_style.color ? `color:#${text.text_style.color};`:'')+
+                            (text.text_style.color ? `color:${text.text_style.color};`:'')+
                             (text.text_style.width ? `font-weight:${text.text_style.width};`:'')+
                             (text.text_style.italic ? `font-style:italic;`:'')+
                             (text.text_style.underline ? `text-decoration:underline;`:'')// Add cross-out
                         ">
                             {{ text.plain_text }}
-                        </p>
+                        </span>
                     </p>
-                    <span v-if="block.type=='checkbox'" class="flex gap-1 items-center">
-                        <input type="checkbox" :checked="block.checked" disabled>
-                        <p v-for="(text, j) of block.rich_text" :key="j" 
+                    <p v-if="block.type=='paragraph'" class="">
+                        <span v-for="(text, j) of block.rich_text" :key="j" 
                         :style="
-                            (text.text_style.color ? `color:#${text.text_style.color};`:'')+
+                            (text.text_style.color ? `color:${text.text_style.color};`:'')+
                             (text.text_style.width ? `font-weight:${text.text_style.width};`:'')+
                             (text.text_style.italic ? `font-style:italic;`:'')+
                             (text.text_style.underline ? `text-decoration:underline;`:'')// Add cross-out
                         ">
                             {{ text.plain_text }}
-                        </p>
-                    </span>
+                        </span>
+                    </p>
+                    <p v-if="block.type=='checkbox'" class="flex items-center">
+                        <input type="checkbox" :checked="block.checked" disabled class=" mr-1">
+                        <span v-for="(text, j) of block.rich_text" :key="j" 
+                        :style="
+                            (text.text_style.color ? `color:${text.text_style.color};`:'')+
+                            (text.text_style.width ? `font-weight:${text.text_style.width};`:'')+
+                            (text.text_style.italic ? `font-style:italic;`:'')+
+                            (text.text_style.underline ? `text-decoration:underline;`:'')// Add cross-out
+                        ">
+                            {{ text.plain_text }}
+                        </span>
+                    </p>
                     <img v-if="block.type=='img'" :src="block.src" alt="" class=" w-full h-min object-cover">
                 </div>
            </div>

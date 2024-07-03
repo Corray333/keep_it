@@ -2,10 +2,13 @@ import { createStore } from 'vuex'
 
 const store = createStore({
     state: {
-      test: 11
+      AccessToken: "",
     },
     getters: {},
     mutations: {
+      setAccess:(state, token)=>{
+        state.AccessToken = token
+      }
     }
 })
 

@@ -37,8 +37,8 @@ func (s *UserStorage) InsertUser(user types.User, agent string) (int, string, er
 	}
 
 	rows := tx.QueryRow(`
-		INSERT INTO users (username, email, tg_username, password, avatar) VALUES ($1, $2, $3, $4, $5) RETURNING user_id;
-	`, user.Username, user.Email, user.TelegramUsername, user.Password, "/images/avatars/default_avatar.png")
+		INSERT INTO users (username, email, tg_username, password, avatar, ref_code) VALUES ($1, $2, $3, $4, $5, $6) RETURNING user_id;
+	`, user.Username, user.Email, user.TelegramUsername, user.Password, "/images/avatars/default_avatar.png", user.RefCode)
 
 	if err := rows.Scan(&user.ID); err != nil {
 		return -1, "", err
@@ -50,8 +50,8 @@ func (s *UserStorage) InsertUser(user types.User, agent string) (int, string, er
 	}
 
 	_, err = tx.Queryx(`
-		INSERT INTO user_token (user_id, user_agent, token) VALUES ($1, $2, $3);
-	`, user.ID, agent, refresh)
+		INSERT INTO user_token (user_id, token) VALUES ($1, $2);
+	`, user.ID, refresh)
 	if err != nil {
 		return -1, "", err
 	}
@@ -83,8 +83,8 @@ func (s *UserStorage) LoginUser(user types.User, agent string) (int, string, err
 	}
 
 	_, err = s.db.Queryx(`
-		INSERT INTO user_token (user_id, user_agent, token) VALUES ($1, $2, $3) ON CONFLICT (user_id, user_agent, token) DO UPDATE SET token = $4;
-	`, user.ID, agent, refresh, refresh)
+		INSERT INTO user_token (user_id, token) VALUES ($1, $2) ON CONFLICT (user_id, token) DO UPDATE SET token = $3;
+	`, user.ID, refresh, refresh)
 	if err != nil {
 		return -1, "", err
 	}
@@ -99,15 +99,18 @@ func (s *UserStorage) RefreshToken(id int, agent, oldRefresh string) (string, st
 		return "", "", err
 	}
 
-	rows := tx.QueryRow(`
-		SELECT token FROM user_token WHERE user_id = $1 AND user_agent = $2;
-	`, id, agent)
+	rows := s.db.QueryRow(`
+		SELECT token FROM user_token WHERE user_id = $1 AND token = $2;
+	`, id, oldRefresh)
 
 	var refresh string
 	if err := rows.Scan(&refresh); err != nil {
 		return "", "", err
 	}
 	if refresh != oldRefresh {
+		fmt.Println()
+		fmt.Println(refresh, " --- ", oldRefresh)
+		fmt.Println()
 		return "", "", fmt.Errorf("invalid refresh token")
 	}
 
@@ -122,8 +125,8 @@ func (s *UserStorage) RefreshToken(id int, agent, oldRefresh string) (string, st
 	}
 
 	_, err = tx.Queryx(`
-		UPDATE user_token SET token = $1 WHERE user_id = $2 AND user_agent = $3;
-	`, newRefresh, id, agent)
+		UPDATE user_token SET token = $1 WHERE user_id = $2 AND token = $3;
+	`, newRefresh, id, oldRefresh)
 	if err != nil {
 		return "", "", err
 	}

@@ -1,7 +1,7 @@
-FROM golang:1.22
+FROM golang:1.22-alpine3.20
 
 WORKDIR /app
 
 COPY . .
 
-CMD [ "./cmd/main" ]
+RUN apk add bash make musl-dev 

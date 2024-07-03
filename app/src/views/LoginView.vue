@@ -3,8 +3,11 @@ import { ref } from 'vue'
 import axios from 'axios'
 import { Icon } from '@iconify/vue'
 import {useRouter} from 'vue-router'
+import {useStore} from 'vuex'
+import { refreshTokens } from '../utils/helpers'
 
 const router = useRouter()
+const store = useStore()
 
 const slide = ref(0)
 
@@ -46,8 +49,8 @@ const signUp = async () => {
             password: password.value,
             code: code.value.join("")
         })
-        document.cookie = `Authorization=${data.authorization};`
-        document.cookie = `Refresh=${data.refresh};`
+        store.commit("setAccess", data.authorization)
+        console.log(data.authorization)
         router.push("/home")
     } catch (error) {
         console.log(error)
@@ -59,10 +62,10 @@ const logIn = async () => {
     try {
         let { data } = await axios.post(`${import.meta.env.VITE_API_URL}/users/login`, {
             username: username.value,
-            password: password.value
-        })
-        document.cookie = `Authorization=${data.authorization};`
-        document.cookie = `Refresh=${data.refresh};`
+            password: password.value,
+        }, {withCredentials:true})
+        store.commit("setAccess", data.authorization)
+        console.log(data.authorization)
         router.push("/home")
     } catch (error) {
         console.log(error)

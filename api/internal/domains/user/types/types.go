@@ -7,6 +7,7 @@ type User struct {
 	Email            string `json:"email" db:"email"`
 	Avatar           string `json:"avatar" db:"avatar"`
 	Password         string `json:"password,omitempty" db:"password"`
+	RefCode          string `json:"-" db:"ref_code"`
 }
 
 type CodeQuery struct {

@@ -4,12 +4,14 @@ import (
 	"log/slog"
 	"net/http"
 
+	_ "github.com/Corray333/keep_it/docs"
 	"github.com/Corray333/keep_it/internal/domains/user"
 	"github.com/Corray333/keep_it/internal/global_storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/spf13/viper"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 type App struct {
@@ -27,10 +29,15 @@ func New() *App {
 
 	// TODO: get allowed origins, headers and methods from cfg
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{"*"},
-		AllowedHeaders: []string{"Authorization"},
-		MaxAge:         300,
+		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Set-Cookie", "Refresh", "X-CSRF-Token"},
+		AllowCredentials: true,
+		MaxAge:           300, // Максимальное время кеширования предзапроса (в секундах)
 	}))
+
+	router.Get("/swagger/*", httpSwagger.WrapHandler)
+
 	// TODO: add timeouts
 	server := http.Server{
 		Addr:    "0.0.0.0:" + viper.GetString("port"),

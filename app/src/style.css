@@ -5,12 +5,14 @@
 @tailwind utilities;
 
 :root{
-    --dark: #1b1b1b;
-    --semi-dark: #333333;
+    --black: #1b1b1b;
+    --dark: #333333;
+    --semi-dark: #8f8f8f;
+    --accent: #FFC555;
 }
 
 body{
-    background-color: var(--dark);
+    background-color: var(--black);
     color: white;
 }
 
@@ -23,4 +25,14 @@ body{
 
 h1,h2,h3{
     font-family: "Nunito", sans-serif;
+}
+
+.router-link-active{
+    color: var(--accent);
+}
+
+@layer components{
+    .bottom-bar-shadow {
+        box-shadow: 0 0 1rem 0 black;
+    }
 }

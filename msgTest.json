@@ -1,0 +1,208 @@
+{
+    "message_id": 33,
+    "from": {
+        "id": 377742748,
+        "is_bot": false,
+        "first_name": "Марк",
+        "last_name": "Аникин",
+        "username": "corray9",
+        "language_code": "en"
+    },
+    "chat": {
+        "id": 377742748,
+        "first_name": "Марк",
+        "last_name": "Аникин",
+        "username": "corray9",
+        "type": "private"
+    },
+    "date": 1719670104,
+    "forward_origin": {
+        "type": "channel",
+        "chat": {
+            "id": -1001364089278,
+            "title": "PROCENT",
+            "username": "procent_crypto",
+            "type": "channel"
+        },
+        "message_id": 6287,
+        "date": 1719654924
+    },
+    "forward_from_chat": {
+        "id": -1001364089278,
+        "title": "PROCENT",
+        "username": "procent_crypto",
+        "type": "channel"
+    },
+    "forward_from_message_id": 6287,
+    "forward_date": 1719654924,
+    "photo": [
+        {
+            "file_id": "AgACAgIAAxkBAAMhZoAVWEVDv25kF7kfbo4r7go4_JIAAp3ZMRuibQABSMMaXJZeXXwAAQEAAwIAA3MAAzUE",
+            "file_unique_id": "AQADndkxG6JtAAFIeA",
+            "file_size": 649,
+            "width": 90,
+            "height": 47
+        },
+        {
+            "file_id": "AgACAgIAAxkBAAMhZoAVWEVDv25kF7kfbo4r7go4_JIAAp3ZMRuibQABSMMaXJZeXXwAAQEAAwIAA20AAzUE",
+            "file_unique_id": "AQADndkxG6JtAAFIcg",
+            "file_size": 5918,
+            "width": 320,
+            "height": 168
+        },
+        {
+            "file_id": "AgACAgIAAxkBAAMhZoAVWEVDv25kF7kfbo4r7go4_JIAAp3ZMRuibQABSMMaXJZeXXwAAQEAAwIAA3gAAzUE",
+            "file_unique_id": "AQADndkxG6JtAAFIfQ",
+            "file_size": 26512,
+            "width": 680,
+            "height": 356
+        }
+    ],
+    "caption": "✅ Открываем Voyager Artifact Chests от Tabi\n\nTabi - это модульный игровой L1-блокчейн на Cosmos.\n\nТеперь у нас появилась возможность открыть \"Voyager Artifact Chests\" боксы, которые можно было получить за выполнение миссий.\n\n➡️ Открыть Voyager Artifact Chests\n\nВарианты содержимого сундука:\n\n🟢Pheonix Feathers (конвертируются в токены $GG);\n🟢Вайтлист на ноду;\n🟢NFT \"Rogue Buccaneer\";\n🟢NFT \"Corsair Captian\";\n🟢И другие предметы (артефакты).\n\nЕсли вы получите Pheonix Feathers, то вы сможете обменять их на токены $GG (обмен платный).\n\n📆 Дедлайн: 12 июля.\n\nВы все еще можете активничать во втором сезоне кампании \"Voyager\" и получить сундуки. \n\nЗа апдейтами можно следить в Twitter и Discord.\n\n🫡 PROCENT | #Дропы",
+    "caption_entities": [
+        {
+            "offset": 2,
+            "length": 41,
+            "type": "bold"
+        },
+        {
+            "offset": 45,
+            "length": 4,
+            "type": "text_link",
+            "url": "https://linktr.ee/tabichain"
+        },
+        {
+            "offset": 45,
+            "length": 4,
+            "type": "bold"
+        },
+        {
+            "offset": 45,
+            "length": 4,
+            "type": "underline"
+        },
+        {
+            "offset": 111,
+            "length": 9,
+            "type": "text_link",
+            "url": "https://x.com/Tabichain/status/1806658926055920002"
+        },
+        {
+            "offset": 225,
+            "length": 2,
+            "type": "custom_emoji",
+            "custom_emoji_id": "5215720576735255650"
+        },
+        {
+            "offset": 227,
+            "length": 1,
+            "type": "bold"
+        },
+        {
+            "offset": 228,
+            "length": 31,
+            "type": "text_link",
+            "url": "https://tabi.lol/account"
+        },
+        {
+            "offset": 228,
+            "length": 31,
+            "type": "bold"
+        },
+        {
+            "offset": 261,
+            "length": 29,
+            "type": "bold"
+        },
+        {
+            "offset": 292,
+            "length": 2,
+            "type": "custom_emoji",
+            "custom_emoji_id": "5215584915898243758"
+        },
+        {
+            "offset": 336,
+            "length": 3,
+            "type": "cashtag"
+        },
+        {
+            "offset": 342,
+            "length": 2,
+            "type": "custom_emoji",
+            "custom_emoji_id": "5215584915898243758"
+        },
+        {
+            "offset": 362,
+            "length": 2,
+            "type": "custom_emoji",
+            "custom_emoji_id": "5215584915898243758"
+        },
+        {
+            "offset": 387,
+            "length": 2,
+            "type": "custom_emoji",
+            "custom_emoji_id": "5215584915898243758"
+        },
+        {
+            "offset": 412,
+            "length": 2,
+            "type": "custom_emoji",
+            "custom_emoji_id": "5215584915898243758"
+        },
+        {
+            "offset": 517,
+            "length": 3,
+            "type": "cashtag"
+        },
+        {
+            "offset": 539,
+            "length": 12,
+            "type": "bold"
+        },
+        {
+            "offset": 629,
+            "length": 16,
+            "type": "text_link",
+            "url": "https://tabi.lol/?code=7ECi3"
+        },
+        {
+            "offset": 678,
+            "length": 7,
+            "type": "text_link",
+            "url": "https://x.com/Tabichain"
+        },
+        {
+            "offset": 688,
+            "length": 7,
+            "type": "text_link",
+            "url": "https://discord.com/invite/Tabichain"
+        },
+        {
+            "offset": 698,
+            "length": 2,
+            "type": "custom_emoji",
+            "custom_emoji_id": "5310192385320304950"
+        },
+        {
+            "offset": 701,
+            "length": 7,
+            "type": "text_link",
+            "url": "https://link3.to/procent_crypto"
+        },
+        {
+            "offset": 701,
+            "length": 7,
+            "type": "bold"
+        },
+        {
+            "offset": 708,
+            "length": 3,
+            "type": "bold"
+        },
+        {
+            "offset": 711,
+            "length": 6,
+            "type": "hashtag"
+        }
+    ]
+}
