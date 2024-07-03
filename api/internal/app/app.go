@@ -36,7 +36,7 @@ func New() *App {
 		MaxAge:           300, // Максимальное время кеширования предзапроса (в секундах)
 	}))
 
-	router.Get("/swagger/*", httpSwagger.WrapHandler)
+	router.Get("/api/swagger/*", httpSwagger.WrapHandler)
 
 	// TODO: add timeouts
 	server := http.Server{
