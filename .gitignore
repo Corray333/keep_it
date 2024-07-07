@@ -2,3 +2,4 @@ api/.env
 api/cmd/main
 *.json
 .env
+certbot
