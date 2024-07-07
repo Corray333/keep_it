@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  api:
+    build: 
+      context: ./api
+      dockerfile: Dockerfile
+    volumes:
+      - ./api:/app
+      - .env:/app/.env
+    ports:
+      - 3001:3001
+    command: make run
+    depends_on:
+      - db
+  
+  authbot:
+    build: 
+      context: ./authbot
+      dockerfile: Dockerfile
+    volumes:
+      - ./authbot:/app
+      - .env:/app/.env
+    command: make run
+    depends_on:
+      - db
+      - redis
+
+  app:
+    image: node:latest
+    command: npm run dev
+    volumes:
+      - ./app:/app
+    working_dir: /app
+    environment:
+      - HOST=0.0.0.0
+    ports:
+      - 3000:3000
+
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_DB=keep_it
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5432:5432
+  
+  nginx:
+    image: nginx:latest
+    ports:
+      - 80:80
+    volumes:
+      - ./nginx/nginx-dev.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - app
+      - api
+      - db
+  
+  redis:
+    image: redis:4.0.5-alpine
+    ports:
+      - 6379:6379

@@ -60,5 +60,5 @@ func (app *App) Use(c Controller) {
 
 func (app *App) Run() {
 	slog.Info("Server is starting...")
-	slog.Info(app.Server.ListenAndServe().Error())
+	slog.Error(app.Server.ListenAndServe().Error())
 }

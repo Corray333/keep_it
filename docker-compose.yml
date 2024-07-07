@@ -7,6 +7,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./api:/app
+      - .env.dev:/app/.env
     ports:
       - 3001:3001
     command: make run
@@ -19,6 +20,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./authbot:/app
+      - .env.dev:/app/.env
     command: make run
     depends_on:
       - db
