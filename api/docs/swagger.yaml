@@ -62,7 +62,28 @@ definitions:
 info:
   contact: {}
 paths:
-  /api/check-code:
+  /api/users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a user by their ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.User'
+      summary: Get a user by ID
+      tags:
+      - users
+  /api/users/check-code:
     post:
       consumes:
       - application/json
@@ -88,7 +109,7 @@ paths:
       summary: Check if a code is valid
       tags:
       - users
-  /api/check-username:
+  /api/users/check-username:
     get:
       description: Check if a username exists in the database
       parameters:
@@ -109,27 +130,6 @@ paths:
           schema:
             type: string
       summary: Check if a username exists
-      tags:
-      - users
-  /api/users/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves a user by their ID.
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/types.User'
-      summary: Get a user by ID
       tags:
       - users
   /api/users/login:

@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/check-code": {
+        "/api/users/check-code": {
             "post": {
                 "description": "Check if the provided code is valid for the given username",
                 "consumes": [
@@ -55,7 +55,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/check-username": {
+        "/api/users/check-username": {
             "get": {
                 "description": "Check if a username exists in the database",
                 "produces": [

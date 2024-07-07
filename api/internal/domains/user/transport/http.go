@@ -399,7 +399,7 @@ type CheckUsernameResponse struct {
 // @Param username query string true "Username to check"
 // @Success 200 {object} CheckUsernameResponse
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /api/check-username [get]
+// @Router /api/users/check-username [get]
 func CheckUsername(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := r.URL.Query().Get("username")
@@ -441,7 +441,7 @@ type CheckCodeResponse struct {
 // @Param request body CheckCodeRequest true "Request body for checking code"
 // @Success 200 {object} CheckCodeResponse
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /api/check-code [post]
+// @Router /api/users/check-code [post]
 func CheckCode(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := &CheckCodeRequest{}
