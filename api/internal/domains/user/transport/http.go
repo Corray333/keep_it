@@ -47,23 +47,23 @@ type LogInResponse struct {
 }
 
 type SignUpRequest struct {
-	types.User
-	Code string `json:"code"`
+	Password string `json:"password"`
+	Username string `json:"username"`
+	Code     string `json:"code"`
 }
 
 // SignUp registers a new user and returns the user ID, refresh token, and access token.
 // @Summary Sign up a new user
 // @Description Registers a new user and returns the user ID, refresh token, and access token.
-// @Tags user
+// @Tags users
 // @Accept  json
 // @Produce  json
-// @Param user body types.User true "User details"
+// @Param user body SignUpRequest true "User details"
 // @Success 200 {object} LogInResponse
 // @Router /api/users/signup [post]
 func SignUp(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		request := SignUpRequest{}
-		request.Avatar = "/images/avatars/default_avatar.png"
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Failed to read request body", http.StatusBadRequest)
@@ -90,8 +90,12 @@ func SignUp(store Storage) http.HandlerFunc {
 			http.Error(w, "Wrong verification code", http.StatusForbidden)
 			return
 		}
-		user := request.User
-		user.TelegramUsername = query.TG
+		user := types.User{
+			Avatar:           "/images/avatars/default_avatar.png",
+			Username:         request.Username,
+			Password:         request.Password,
+			TelegramUsername: query.TG,
+		}
 
 		id, refresh, err := store.InsertUser(user, r.UserAgent())
 		if err != nil {
@@ -138,30 +142,39 @@ func SignUp(store Storage) http.HandlerFunc {
 	}
 }
 
+type LoginRequest struct {
+	Password string `json:"password"`
+	Username string `json:"username"`
+}
+
 // LogIn logs in a user and returns the user ID, refresh token, and access token.
 // @Summary Log in a user
 // @Description Logs in a user and returns the user ID, refresh token, and access token.
-// @Tags user
+// @Tags users
 // @Accept  json
 // @Produce  json
-// @Param user body types.User true "User details"
+// @Param user body LoginRequest true "User details"
 // @Success 200 {object} LogInResponse
 // @Router /api/users/login [post]
 func LogIn(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// TODO: check and remove expired tokens
 
-		user := types.User{}
+		request := LoginRequest{}
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Failed to read request body", http.StatusBadRequest)
 			slog.Error("Failed to read request body: " + err.Error())
 			return
 		}
-		if err := json.Unmarshal(body, &user); err != nil {
+		if err := json.Unmarshal(body, &request); err != nil {
 			http.Error(w, "Failed to unmarshal request body", http.StatusBadRequest)
 			slog.Error("Failed to unmarshal request body: " + err.Error())
 			return
+		}
+		user := types.User{
+			Username: request.Username,
+			Password: request.Password,
 		}
 		id, refresh, err := store.LoginUser(user, r.UserAgent())
 		if err != nil {
@@ -215,7 +228,7 @@ func LogIn(store Storage) http.HandlerFunc {
 // RefreshAccessToken refreshes the access token using the refresh token.
 // @Summary Refresh access token
 // @Description Refreshes the access token using the refresh token.
-// @Tags user
+// @Tags users
 // @Accept  json
 // @Produce  json
 // @Param refresh query string true "Refresh token"
@@ -284,7 +297,7 @@ func RefreshAccessToken(store Storage) http.HandlerFunc {
 // GetUser retrieves a user by their ID.
 // @Summary Get a user by ID
 // @Description Retrieves a user by their ID.
-// @Tags user
+// @Tags users
 // @Accept  json
 // @Produce  json
 // @Param id path string true "User ID"
@@ -323,15 +336,6 @@ func GetUser(store Storage) http.HandlerFunc {
 	}
 }
 
-// UpdateUser updates a user's details.
-// @Summary Update a user
-// @Description Updates a user's details.
-// @Tags user
-// @Accept  json
-// @Produce  json
-// @Param user body types.User true "Updated user details"
-// @Success 200 {object} types.User
-// @Router /api/users/update [put]
 func UpdateUser(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		creds, err := auth.ExtractCredentials(r.Header.Get("Authorization"))
@@ -395,7 +399,7 @@ type CheckUsernameResponse struct {
 // @Param username query string true "Username to check"
 // @Success 200 {object} CheckUsernameResponse
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /check-username [get]
+// @Router /api/check-username [get]
 func CheckUsername(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := r.URL.Query().Get("username")
@@ -437,7 +441,7 @@ type CheckCodeResponse struct {
 // @Param request body CheckCodeRequest true "Request body for checking code"
 // @Success 200 {object} CheckCodeResponse
 // @Failure 500 {string} string "Internal Server Error"
-// @Router /check-code [post]
+// @Router /api/check-code [post]
 func CheckCode(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := &CheckCodeRequest{}

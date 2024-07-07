@@ -28,6 +28,22 @@ definitions:
       user:
         $ref: '#/definitions/types.User'
     type: object
+  transport.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  transport.SignUpRequest:
+    properties:
+      code:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
   types.User:
     properties:
       avatar:
@@ -46,117 +62,7 @@ definitions:
 info:
   contact: {}
 paths:
-  /api/users/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves a user by their ID.
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/types.User'
-      summary: Get a user by ID
-      tags:
-      - user
-  /api/users/login:
-    post:
-      consumes:
-      - application/json
-      description: Logs in a user and returns the user ID, refresh token, and access
-        token.
-      parameters:
-      - description: User details
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/types.User'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/transport.LogInResponse'
-      summary: Log in a user
-      tags:
-      - user
-  /api/users/refresh_token:
-    get:
-      consumes:
-      - application/json
-      description: Refreshes the access token using the refresh token.
-      parameters:
-      - description: Refresh token
-        in: query
-        name: refresh
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/transport.LogInResponse'
-      summary: Refresh access token
-      tags:
-      - user
-  /api/users/signup:
-    post:
-      consumes:
-      - application/json
-      description: Registers a new user and returns the user ID, refresh token, and
-        access token.
-      parameters:
-      - description: User details
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/types.User'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/transport.LogInResponse'
-      summary: Sign up a new user
-      tags:
-      - user
-  /api/users/update:
-    put:
-      consumes:
-      - application/json
-      description: Updates a user's details.
-      parameters:
-      - description: Updated user details
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/types.User'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/types.User'
-      summary: Update a user
-      tags:
-      - user
-  /check-code:
+  /api/check-code:
     post:
       consumes:
       - application/json
@@ -182,7 +88,7 @@ paths:
       summary: Check if a code is valid
       tags:
       - users
-  /check-username:
+  /api/check-username:
     get:
       description: Check if a username exists in the database
       parameters:
@@ -203,6 +109,94 @@ paths:
           schema:
             type: string
       summary: Check if a username exists
+      tags:
+      - users
+  /api/users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a user by their ID.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.User'
+      summary: Get a user by ID
+      tags:
+      - users
+  /api/users/login:
+    post:
+      consumes:
+      - application/json
+      description: Logs in a user and returns the user ID, refresh token, and access
+        token.
+      parameters:
+      - description: User details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/transport.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/transport.LogInResponse'
+      summary: Log in a user
+      tags:
+      - users
+  /api/users/refresh_token:
+    get:
+      consumes:
+      - application/json
+      description: Refreshes the access token using the refresh token.
+      parameters:
+      - description: Refresh token
+        in: query
+        name: refresh
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/transport.LogInResponse'
+      summary: Refresh access token
+      tags:
+      - users
+  /api/users/signup:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new user and returns the user ID, refresh token, and
+        access token.
+      parameters:
+      - description: User details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/transport.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/transport.LogInResponse'
+      summary: Sign up a new user
       tags:
       - users
 swagger: "2.0"
