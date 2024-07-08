@@ -10,6 +10,7 @@ services:
       - .env:/app/.env
     ports:
       - 3001:3001
+    restart: always
     command: make run
     depends_on:
       - db
@@ -22,6 +23,7 @@ services:
       - ./authbot:/app
       - .env:/app/.env
     command: make run
+    restart: always
     depends_on:
       - db
       - redis
@@ -36,28 +38,41 @@ services:
       - HOST=0.0.0.0
     ports:
       - 3000:3000
+    restart: always
 
   db:
     image: postgres
     environment:
-      - POSTGRES_DB=keep_it
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - 5432:5432
+      POSTGRES_DB: keep_it
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    restart: always
   
   nginx:
     image: nginx:latest
     ports:
       - 80:80
+      - 443:443
     volumes:
-      - ./nginx/nginx-dev.conf:/etc/nginx/nginx.conf
+      - ./nginx/nginx-prod.conf:/etc/nginx/nginx.conf
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     depends_on:
       - app
       - api
       - db
+    restart: always
+    
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    restart: always
   
   redis:
     image: redis:4.0.5-alpine
+    restart: always
     ports:
       - 6379:6379

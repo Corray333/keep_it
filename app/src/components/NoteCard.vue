@@ -86,7 +86,7 @@ const content = computed(()=>{
                             {{ text.plain_text }}
                         </span>
                     </p>
-                    <p v-if="block.type=='paragraph'" class="">
+                    <p v-if="block.type=='p'" class="">
                         <span v-for="(text, j) of block.rich_text" :key="j" 
                         :style="
                             (text.text_style.color ? `color:${text.text_style.color};`:'')+

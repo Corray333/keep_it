@@ -454,7 +454,7 @@ func CheckCode(store Storage) http.HandlerFunc {
 
 		codeQuery, err := store.GetCodeRequest(req.Username)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnauthorized)
 			slog.Error("error during checking code in db: " + err.Error())
 			return
 		}
