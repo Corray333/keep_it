@@ -77,10 +77,8 @@ services:
   redis:
     image: redis
     restart: always
-    volumes:
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     ports:
       - 6379:6379

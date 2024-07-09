@@ -70,10 +70,9 @@ services:
     restart: always
   
   redis:
-    image: redis:4.0.5-alpine
+    image: redis
     restart: always
-    volumes:
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:

@@ -58,6 +58,6 @@ services:
       - db
     
   redis:
-    image: redis:4.0.5-alpine
+    image: redis
     ports:
       - 6379:6379
