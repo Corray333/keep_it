@@ -40,9 +40,9 @@ services:
   db:
     image: postgres
     environment:
-      - POSTGRES_DB=keep_it
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      POSTGRES_DB: keep_it
+      POSTGRES_USER: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - 5432:5432
   
