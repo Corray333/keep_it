@@ -8,8 +8,6 @@ services:
     volumes:
       - ./api:/app
       - .env:/app/.env
-    ports:
-      - 3001:3001
     restart: always
     command: make run
     depends_on:
@@ -74,6 +72,8 @@ services:
   redis:
     image: redis:4.0.5-alpine
     restart: always
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:

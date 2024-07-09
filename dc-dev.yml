@@ -7,9 +7,10 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./api:/app
-      - .env.dev:/app/.env
+      - .env:/app/.env
     ports:
       - 3001:3001
+    restart: always
     command: make run
     depends_on:
       - db
@@ -20,8 +21,11 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./authbot:/app
-      - .env.dev:/app/.env
+      - .env:/app/.env
     command: make run
+    ports:
+      - 3002:3002
+    restart: always
     depends_on:
       - db
       - redis
@@ -36,6 +40,7 @@ services:
       - HOST=0.0.0.0
     ports:
       - 3000:3000
+    restart: always
 
   db:
     image: postgres
@@ -43,6 +48,7 @@ services:
       POSTGRES_DB: keep_it
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    restart: always
     ports:
       - 5432:5432
   
@@ -50,14 +56,30 @@ services:
     image: nginx:latest
     ports:
       - 80:80
+      - 443:443
     volumes:
       - ./nginx/nginx-dev.conf:/etc/nginx/nginx.conf
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     depends_on:
       - app
       - api
-      - db
+    restart: always
     
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    restart: always
+  
   redis:
-    image: redis:4.0.5-alpine
+    image: redis
+    restart: always
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - 6379:6379

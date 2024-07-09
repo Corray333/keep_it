@@ -1,4 +1,4 @@
-include ../.env
+include .env
 build:
 	cd cmd && go build main.go
 lint:
