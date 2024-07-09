@@ -1,3 +1,4 @@
+include ../.env
 build:
 	cd cmd && go build main.go
 lint:
@@ -5,8 +6,8 @@ lint:
 run: build
 	cd cmd && ./main ../.env
 goose-up:
-	cd migrations && goose postgres "user=postgres password=postgres host=localhost port=5432 dbname=keep_it sslmode=disable" up
+	cd migrations && goose postgres "user=$(POSTGRES_USER) password=$(POSTGRES_PASSWORD) host=localhost port=5432 dbname=keep_it sslmode=disable" up
 goose-down:
-	cd migrations && goose postgres "user=postgres password=postgres host=localhost port=5432 dbname=keep_it sslmode=disable" down
+	cd migrations && goose postgres "user=$(POSTGRES_USER) password=$(POSTGRES_PASSWORD) host=localhost port=5432 dbname=keep_it sslmode=disable" down
 goose-down-all:
-	cd migrations && goose postgres "user=postgres password=postgres host=localhost port=5432 dbname=keep_it sslmode=disable" down-to 0
+	cd migrations && goose postgres "user=$(POSTGRES_USER) password=$(POSTGRES_PASSWORD) host=localhost port=5432 dbname=keep_it sslmode=disable" down-to 0
