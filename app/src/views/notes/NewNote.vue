@@ -148,6 +148,10 @@ const handleInput = (text, event) => {
 
 }
 
+const test = ()=>{
+    console.log(window.getSelection())
+}
+
 </script>
 
 <template>
@@ -194,7 +198,7 @@ const handleInput = (text, event) => {
                         @blur="handleBlur"
                         v-text="task.task"></span> -->
 
-                <div v-for="(block, i) of content" :key="i" contenteditable>
+                <div v-for="(block, i) of content" :key="i" contenteditable @click="test()">
                     <span v-if="block.type == 'h1'" class=" text-sm font-bold">
                         <span role="textbox" v-for="(text, j) of block.rich_text" :key="j" :style="(text.text_style.color ? `color:#${text.text_style.color};` : '') +
                             (text.text_style.width ? `font-weight:${text.text_style.width};` : '') +
@@ -204,8 +208,8 @@ const handleInput = (text, event) => {
                                 {{ text.plain_text }}
                         </span>
                     </span>
-                    <span role="textbox" v-if="block.type == 'p'" class=" w-fit" v-for="(text, j) of block.rich_text" :key="j"
-                        @click="console.log(text, $event)" 
+                    <span role="textbox" v-if="block.type == 'p'" class=" w-fit" v-for="(text, j) of block.rich_text" :key="j" @click="test()"
+                        
                         :style="(text.text_style.color ? `color:#${text.text_style.color};` : '') +
                                 (text.text_style.width ? `font-weight:${text.text_style.width};` : '') +
                                 (text.text_style.italic ? `font-style:italic;` : '') +

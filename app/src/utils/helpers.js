@@ -1,5 +1,4 @@
 import axios from 'axios'
-import {useRouter} from 'vue-router'
 
 function getCookie(name) {
     const value = `; ${document.cookie}`
@@ -16,9 +15,6 @@ const refreshTokens = async (store) => {
     } catch (error) {
         console.log(error)
         alert(error)
-        // alert('Error refreshing tokens')
-        // const router = useRouter()
-        // router.push('/login')
     }
 }
 

@@ -12,7 +12,7 @@ const getUser = async ()=>{
                 'Authorization': store.state.AccessToken,
             }
         })
-        console.log(data)
+        console.log(data.user)
     } catch (error) {
         console.log(error)
         alert(error)
@@ -22,7 +22,7 @@ const getUser = async ()=>{
 </script>
 
 <template>
-    <header class="flex items-center w-full p-5 pb-0 gap-5">
+    <header class="flex items-center w-full md:w-1/2 md:mx-auto p-5 pb-0 gap-5">
         <div class="search w-full relative flex items-center justify-end">
             <input type="text" placeholder="search" class="p-2 rounded-full bg-[#333] w-full">
             <button

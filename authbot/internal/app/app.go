@@ -15,6 +15,7 @@ import (
 
 type Storage interface {
 	SetUserRequest(query *types.CodeQuery) error
+	UsernameIsAppropriate(username, tg_username string) (bool, error)
 }
 
 type App struct {
@@ -22,13 +23,13 @@ type App struct {
 }
 
 const (
-	LoginRequestLogIn = iota
-	LoginRequestSignUp
+	LoginRequestSignUp = iota + 1
+	LoginRequestLogIn
 	LoginRequestChangePassword
 )
 
 func New() *App {
-	return &App{Storage: storage.NewStorage()}
+	return &App{Storage: storage.New()}
 }
 
 func (app *App) Run() {
@@ -67,14 +68,14 @@ func (app *App) Run() {
 					slog.Error("decode error:" + err.Error())
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, we have some internal problems😢 Please, try to log in later.")
 					bot.Send(msg)
-					return
+					continue
 				}
 				var query types.CodeQuery
 				if err := json.Unmarshal(decodedArgs, &query); err != nil {
 					slog.Error("decoding error: " + err.Error())
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, we have some internal problems😢 Please, try to log in later.")
 					bot.Send(msg)
-					return
+					continue
 				}
 
 				if query.Username == "" || query.TypeID == 0 {
@@ -84,7 +85,21 @@ func (app *App) Run() {
 					continue
 				}
 
-				query.TG = update.Message.From.UserName
+				allowed, err := app.Storage.UsernameIsAppropriate(query.Username, update.FromChat().UserName)
+				if err != nil {
+					slog.Error("error while searching user: " + err.Error())
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, we have some internal problems😢 Please, try to log in later.")
+					bot.Send(msg)
+					continue
+				}
+
+				if !allowed {
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "This telegram account is already used by other user. Use your existing username or contact support🤙")
+					bot.Send(msg)
+					continue
+				}
+
+				query.TG = update.FromChat().UserName
 				query.Code = utils.GenerateVerificationCode()
 
 				if err := app.Storage.SetUserRequest(&query); err != nil {

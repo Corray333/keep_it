@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	_ "github.com/Corray333/keep_it/docs"
+	"github.com/Corray333/keep_it/internal/domains/note"
 	"github.com/Corray333/keep_it/internal/domains/user"
 	"github.com/Corray333/keep_it/internal/global_storage"
 	"github.com/go-chi/chi/v5"
@@ -50,6 +51,7 @@ func New() *App {
 	}
 
 	app.Use(user.NewController())
+	app.Use(note.NewController())
 
 	return app
 }
