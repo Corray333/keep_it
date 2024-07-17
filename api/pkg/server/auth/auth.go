@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -28,11 +29,13 @@ func NewAuthMiddleware() func(next http.Handler) http.Handler {
 		slog.Info("auth middleware enabled")
 
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			if err := VerifyToken(r.Header.Get("Authorization")); err != nil {
+			creds, err := VerifyToken(r.Header.Get("Authorization"))
+			if err != nil {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				slog.Error("Unauthorized: " + err.Error())
 				return
 			}
+			r = r.WithContext(context.WithValue(r.Context(), "creds", creds))
 			next.ServeHTTP(w, r)
 		}
 		return http.HandlerFunc(fn)
@@ -68,20 +71,30 @@ func CreateToken(id int, lifeTime time.Duration) (string, error) {
 }
 
 // VerifyToken checks if the JWT is valid
-func VerifyToken(tokenString string) error {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+func VerifyToken(tokenString string) (Credentials, error) {
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		return secretKey, nil
 	})
 
 	if err != nil {
-		return err
+		return Credentials{}, err
 	}
 
 	if !token.Valid {
-		return fmt.Errorf("invalid token")
+		return Credentials{}, fmt.Errorf("invalid token")
 	}
 
-	return nil
+	exp, err := token.Claims.GetExpirationTime()
+	if err != nil {
+		return Credentials{}, err
+	}
+	creds := Credentials{
+		ID:  int(claims["id"].(float64)),
+		Exp: exp.Time,
+	}
+
+	return creds, nil
 }
 
 type Credentials struct {

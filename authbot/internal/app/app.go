@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -112,8 +113,38 @@ func (app *App) Run() {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Your code is: "+query.Code)
 				bot.Send(msg)
 				continue
-
 			}
+		} else if update.Message.ForwardFrom != nil || update.Message.ForwardFromChat != nil {
+			link := ""
+			if update.Message.ForwardFromChat.UserName != "" {
+				// For public groups/channels
+				link = fmt.Sprintf("https://t.me/%s/%d", update.Message.ForwardFromChat.UserName, update.Message.ForwardFromMessageID)
+			} else {
+				// For private groups/channels
+				link = fmt.Sprintf("https://t.me/c/%d/%d", update.Message.ForwardFromChat.ID, update.Message.ForwardFromMessageID)
+			}
+
+			orig := types.Original{
+				Text: update.Message.ForwardFromChat.UserName,
+				Link: link,
+			}
+			marshalled, err := json.Marshal(orig)
+			if err != nil {
+				slog.Error("error while marshaling original message: " + err.Error())
+				continue
+			}
+			note := types.Note{
+				Original: marshalled,
+				Source:   "tg",
+				Type:     1,
+				Content:  json.RawMessage(update.Message.Text),
+			}
+			t, err := json.Marshal(note)
+
+			fmt.Println(err)
+			fmt.Println()
+			fmt.Println("Note: ", t)
+			fmt.Println()
 		}
 	}
 }
