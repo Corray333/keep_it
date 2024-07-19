@@ -15,6 +15,257 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/notes": {
+            "post": {
+                "description": "Create a new note",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notes"
+                ],
+                "summary": "Create Note",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access JWT",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "New Note Request",
+                        "name": "NewNoteRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/transport.NewNoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/transport.NewNoteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/notes/{note_id}": {
+            "get": {
+                "description": "Retrieve a specific note by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notes"
+                ],
+                "summary": "Get Note",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access JWT",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Note ID",
+                        "name": "note_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/transport.GetNoteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Update a specific note by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notes"
+                ],
+                "summary": "Update Note",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access JWT",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Note ID",
+                        "name": "note_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Note Request",
+                        "name": "UpdateNoteRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/transport.UpdateNoteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/tags": {
+            "post": {
+                "description": "Create a new tag",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "Create Tag",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access JWT",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Create Tag Request",
+                        "name": "CreateTagRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/transport.CreateTagRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/transport.CreateTagResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/users/check-code": {
             "post": {
                 "description": "Check if the provided code is valid for the given username",
@@ -254,6 +505,71 @@ const docTemplate = `{
                 }
             }
         },
+        "transport.CreateTagRequest": {
+            "type": "object",
+            "properties": {
+                "tag": {
+                    "$ref": "#/definitions/types.Tag"
+                }
+            }
+        },
+        "transport.CreateTagResponse": {
+            "type": "object",
+            "properties": {
+                "tag": {
+                    "$ref": "#/definitions/types.Tag"
+                }
+            }
+        },
+        "transport.GetNoteResponse": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "integer"
+                },
+                "category_owner": {
+                    "type": "integer"
+                },
+                "checked": {
+                    "type": "boolean"
+                },
+                "content": {},
+                "copied_at": {
+                    "type": "integer"
+                },
+                "cover": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "creator": {
+                    "type": "integer"
+                },
+                "font": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "original": {},
+                "source": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.Tag"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
+                }
+            }
+        },
         "transport.LogInResponse": {
             "type": "object",
             "properties": {
@@ -279,6 +595,57 @@ const docTemplate = `{
                 }
             }
         },
+        "transport.NewNoteRequest": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "integer"
+                },
+                "category_owner": {
+                    "type": "integer"
+                },
+                "checked": {
+                    "type": "boolean"
+                },
+                "content": {},
+                "copied_at": {
+                    "type": "integer"
+                },
+                "cover": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "font": {
+                    "type": "string"
+                },
+                "original": {},
+                "source": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.Tag"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
+                }
+            }
+        },
+        "transport.NewNoteResponse": {
+            "type": "object",
+            "properties": {
+                "note_id": {
+                    "type": "string"
+                }
+            }
+        },
         "transport.SignUpRequest": {
             "type": "object",
             "properties": {
@@ -289,6 +656,27 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "transport.UpdateNoteRequest": {
+            "type": "object",
+            "additionalProperties": true
+        },
+        "types.Tag": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "owner": {
+                    "type": "integer"
+                },
+                "text": {
                     "type": "string"
                 }
             }

@@ -19,6 +19,49 @@ definitions:
       found:
         type: boolean
     type: object
+  transport.CreateTagRequest:
+    properties:
+      tag:
+        $ref: '#/definitions/types.Tag'
+    type: object
+  transport.CreateTagResponse:
+    properties:
+      tag:
+        $ref: '#/definitions/types.Tag'
+    type: object
+  transport.GetNoteResponse:
+    properties:
+      category_id:
+        type: integer
+      category_owner:
+        type: integer
+      checked:
+        type: boolean
+      content: {}
+      copied_at:
+        type: integer
+      cover:
+        type: string
+      created_at:
+        type: integer
+      creator:
+        type: integer
+      font:
+        type: string
+      id:
+        type: string
+      original: {}
+      source:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/types.Tag'
+        type: array
+      title:
+        type: string
+      type:
+        type: integer
+    type: object
   transport.LogInResponse:
     properties:
       authorization:
@@ -35,6 +78,40 @@ definitions:
       username:
         type: string
     type: object
+  transport.NewNoteRequest:
+    properties:
+      category_id:
+        type: integer
+      category_owner:
+        type: integer
+      checked:
+        type: boolean
+      content: {}
+      copied_at:
+        type: integer
+      cover:
+        type: string
+      created_at:
+        type: integer
+      font:
+        type: string
+      original: {}
+      source:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/types.Tag'
+        type: array
+      title:
+        type: string
+      type:
+        type: integer
+    type: object
+  transport.NewNoteResponse:
+    properties:
+      note_id:
+        type: string
+    type: object
   transport.SignUpRequest:
     properties:
       code:
@@ -42,6 +119,20 @@ definitions:
       password:
         type: string
       username:
+        type: string
+    type: object
+  transport.UpdateNoteRequest:
+    additionalProperties: true
+    type: object
+  types.Tag:
+    properties:
+      color:
+        type: string
+      id:
+        type: integer
+      owner:
+        type: integer
+      text:
         type: string
     type: object
   types.User:
@@ -62,6 +153,173 @@ definitions:
 info:
   contact: {}
 paths:
+  /api/notes:
+    post:
+      consumes:
+      - application/json
+      description: Create a new note
+      parameters:
+      - description: Access JWT
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: New Note Request
+        in: body
+        name: NewNoteRequest
+        required: true
+        schema:
+          $ref: '#/definitions/transport.NewNoteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/transport.NewNoteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create Note
+      tags:
+      - notes
+  /api/notes/{note_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific note by its ID
+      parameters:
+      - description: Access JWT
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Note ID
+        in: path
+        name: note_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/transport.GetNoteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get Note
+      tags:
+      - notes
+    patch:
+      consumes:
+      - application/json
+      description: Update a specific note by its ID
+      parameters:
+      - description: Access JWT
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Note ID
+        in: path
+        name: note_id
+        required: true
+        type: string
+      - description: Update Note Request
+        in: body
+        name: UpdateNoteRequest
+        required: true
+        schema:
+          $ref: '#/definitions/transport.UpdateNoteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update Note
+      tags:
+      - notes
+  /api/tags:
+    post:
+      consumes:
+      - application/json
+      description: Create a new tag
+      parameters:
+      - description: Access JWT
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Create Tag Request
+        in: body
+        name: CreateTagRequest
+        required: true
+        schema:
+          $ref: '#/definitions/transport.CreateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/transport.CreateTagResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create Tag
+      tags:
+      - tags
   /api/users/{id}:
     get:
       consumes:

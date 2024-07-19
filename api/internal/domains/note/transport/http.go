@@ -19,18 +19,35 @@ type Storage interface {
 	UpdateNote(note_id string, data map[string]interface{}) error
 }
 
-// GetNote fetches a specific note.
-// @Summary Fetch a note
-// @Description Retrieves a note by its ID.
+type GetNoteResponse struct {
+	ID            string      `json:"id" db:"note_id"`
+	Creator       int         `json:"creator" db:"creator"`
+	Tags          []types.Tag `json:"tags" db:"tags"`
+	Title         string      `json:"title" db:"title"`
+	Source        string      `json:"source" db:"source"`
+	Original      any         `json:"original" db:"original"`
+	Font          string      `json:"font" db:"font"`
+	CreatedAt     int64       `json:"created_at" db:"created_at"`
+	CopiedAt      int64       `json:"copied_at" db:"copied_at"`
+	Type          int16       `json:"type" db:"type"`
+	Checked       bool        `json:"checked" db:"checked"`
+	Content       any         `json:"content" db:"content"`
+	Cover         string      `json:"cover" db:"cover"`
+	CategoryOwner int64       `json:"category_owner" db:"category_owner"`
+	CategoryId    int         `json:"category_id" db:"category_id"`
+}
+
+// @Summary Get Note
+// @Description Retrieve a specific note by its ID
 // @Tags notes
 // @Accept json
 // @Produce json
+// @Param Authorization header string true "Access JWT"
 // @Param note_id path string true "Note ID"
-// @Security ApiKeyAuth
-// @Success 200 {object} types.Note
+// @Success 200 {object} GetNoteResponse
+// @Failure 400 {string} string "Bad Request"
 // @Failure 401 {string} string "Unauthorized"
 // @Failure 403 {string} string "Forbidden"
-// @Failure 404 {string} string "Note not found"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /api/notes/{note_id} [get]
 func GetNote(store Storage) http.HandlerFunc {
@@ -72,19 +89,33 @@ func GetNote(store Storage) http.HandlerFunc {
 	}
 }
 
-// NewNoteResponse represents the response structure for creating a new note.
+type NewNoteRequest struct {
+	Tags          []types.Tag `json:"tags" db:"tags"`
+	Title         string      `json:"title" db:"title"`
+	Source        string      `json:"source" db:"source"`
+	Original      any         `json:"original" db:"original"`
+	Font          string      `json:"font" db:"font"`
+	CreatedAt     int64       `json:"created_at" db:"created_at"`
+	CopiedAt      int64       `json:"copied_at" db:"copied_at"`
+	Type          int16       `json:"type" db:"type"`
+	Checked       bool        `json:"checked" db:"checked"`
+	Content       any         `json:"content" db:"content"`
+	Cover         string      `json:"cover" db:"cover"`
+	CategoryOwner int64       `json:"category_owner" db:"category_owner"`
+	CategoryId    int         `json:"category_id" db:"category_id"`
+}
+
 type NewNoteResponse struct {
 	NoteID string `json:"note_id"`
 }
 
-// CreateNote creates a new note.
-// @Summary Create a new note
-// @Description Creates a new note with the provided details.
+// @Summary Create Note
+// @Description Create a new note
 // @Tags notes
 // @Accept json
 // @Produce json
-// @Param note body types.Note true "Note details"
-// @Security ApiKeyAuth
+// @Param Authorization header string true "Access JWT"
+// @Param NewNoteRequest body NewNoteRequest true "New Note Request"
 // @Success 201 {object} NewNoteResponse
 // @Failure 400 {string} string "Bad Request"
 // @Failure 401 {string} string "Unauthorized"
@@ -124,24 +155,21 @@ func CreateNote(store Storage) http.HandlerFunc {
 	}
 }
 
-// CreateTagRequest represents the request structure for creating a new tag.
 type CreateTagRequest struct {
 	Tag types.Tag `json:"tag"`
 }
 
-// CreateTagResponse represents the response structure for creating a new tag.
 type CreateTagResponse struct {
 	Tag types.Tag `json:"tag"`
 }
 
-// CreateTag creates a new tag.
-// @Summary Create a new tag
-// @Description Creates a new tag with the provided details.
+// @Summary Create Tag
+// @Description Create a new tag
 // @Tags tags
 // @Accept json
 // @Produce json
-// @Param tag body CreateTagRequest true "Tag details"
-// @Security ApiKeyAuth
+// @Param Authorization header string true "Access JWT"
+// @Param CreateTagRequest body CreateTagRequest true "Create Tag Request"
 // @Success 200 {object} CreateTagResponse
 // @Failure 400 {string} string "Bad Request"
 // @Failure 401 {string} string "Unauthorized"
@@ -182,18 +210,18 @@ func CreateTag(store Storage) http.HandlerFunc {
 
 type UpdateNoteRequest map[string]interface{}
 
-// UpdateNote updates an existing note.
-// @Summary Update a note
-// @Description Updates an existing note with the provided fields.
+// @Summary Update Note
+// @Description Update a specific note by its ID
 // @Tags notes
 // @Accept json
 // @Produce json
+// @Param Authorization header string true "Access JWT"
 // @Param note_id path string true "Note ID"
-// @Security ApiKeyAuth
+// @Param UpdateNoteRequest body UpdateNoteRequest true "Update Note Request"
 // @Success 200 {string} string "OK"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 401 {string} string "Unauthorized"
-// @Failure 404 {string} string "Note not found"
+// @Failure 404 {string} string "Not Found"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /api/notes/{note_id} [patch]
 func UpdateNote(store Storage) http.HandlerFunc {
