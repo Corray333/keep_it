@@ -40,9 +40,8 @@ func RequestCodeByEmail(store *Storage) http.HandlerFunc {
 	}
 }
 
-type LogInResponse struct {
+type SignUpResponse struct {
 	Authorization string     `json:"authorization"`
-	Refresh       string     `json:"refresh"`
 	User          types.User `json:"user,omitempty"`
 }
 
@@ -52,14 +51,17 @@ type SignUpRequest struct {
 	Code     string `json:"code"`
 }
 
-// SignUp registers a new user and returns the user ID, refresh token, and access token.
+// SignUp handles user signup
 // @Summary Sign up a new user
-// @Description Registers a new user and returns the user ID, refresh token, and access token.
+// @Description Sign up a new user with username, password, and verification code
 // @Tags users
-// @Accept  json
-// @Produce  json
-// @Param user body SignUpRequest true "User details"
-// @Success 200 {object} LogInResponse
+// @Accept json
+// @Produce json
+// @Param signupRequest body SignUpRequest true "Sign up request"
+// @Success 200 {object} SignUpResponse
+// @Failure 400 {string} string "Bad request"
+// @Failure 403 {string} string "Forbidden"
+// @Failure 500 {string} string "Internal server error"
 // @Router /api/users/signup [post]
 func SignUp(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +133,7 @@ func SignUp(store Storage) http.HandlerFunc {
 			return
 		}
 		user.Password = ""
-		if err := json.NewEncoder(w).Encode(LogInResponse{
+		if err := json.NewEncoder(w).Encode(SignUpResponse{
 			Authorization: token,
 			User:          user,
 		}); err != nil {
@@ -142,19 +144,26 @@ func SignUp(store Storage) http.HandlerFunc {
 	}
 }
 
+type LogInResponse struct {
+	Authorization string     `json:"authorization"`
+	User          types.User `json:"user,omitempty"`
+}
 type LoginRequest struct {
 	Password string `json:"password"`
 	Username string `json:"username"`
 }
 
-// LogIn logs in a user and returns the user ID, refresh token, and access token.
+// LogIn handles user login
 // @Summary Log in a user
-// @Description Logs in a user and returns the user ID, refresh token, and access token.
+// @Description Log in a user with username and password
 // @Tags users
-// @Accept  json
-// @Produce  json
-// @Param user body LoginRequest true "User details"
+// @Accept json
+// @Produce json
+// @Param loginRequest body LoginRequest true "Login request"
 // @Success 200 {object} LogInResponse
+// @Failure 400 {string} string "Bad request"
+// @Failure 403 {string} string "Forbidden"
+// @Failure 500 {string} string "Internal server error"
 // @Router /api/users/login [post]
 func LogIn(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -225,15 +234,21 @@ func LogIn(store Storage) http.HandlerFunc {
 	}
 }
 
-// RefreshAccessToken refreshes the access token using the refresh token.
+type RefreshAccessTokenResponse struct {
+	Authorization string `json:"authorization"`
+}
+
+// RefreshAccessToken handles refreshing of access token
 // @Summary Refresh access token
-// @Description Refreshes the access token using the refresh token.
+// @Description Refresh the access token using the refresh token in cookies
 // @Tags users
-// @Accept  json
-// @Produce  json
-// @Param refresh query string true "Refresh token"
-// @Success 200 {object} LogInResponse
-// @Router /api/users/refresh_token [get]
+// @Accept json
+// @Produce json
+// @Success 200 {object} RefreshAccessTokenResponse
+// @Failure 400 {string} string "Bad request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal server error"
+// @Router /api/users/refresh [get]
 func RefreshAccessToken(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		refreshCookie, err := r.Cookie("Refresh")
@@ -284,7 +299,7 @@ func RefreshAccessToken(store Storage) http.HandlerFunc {
 
 		http.SetCookie(w, &cookie)
 
-		if err := json.NewEncoder(w).Encode(LogInResponse{
+		if err := json.NewEncoder(w).Encode(RefreshAccessTokenResponse{
 			Authorization: access,
 		}); err != nil {
 			http.Error(w, "Failed to encode response", http.StatusInternalServerError)
@@ -294,14 +309,15 @@ func RefreshAccessToken(store Storage) http.HandlerFunc {
 	}
 }
 
-// GetUser retrieves a user by their ID.
-// @Summary Get a user by ID
-// @Description Retrieves a user by their ID.
+// GetUser handles fetching user information
+// @Summary Get user information
+// @Description Get user information by ID
 // @Tags users
-// @Accept  json
-// @Produce  json
+// @Produce json
 // @Param id path string true "User ID"
 // @Success 200 {object} types.User
+// @Failure 400 {string} string "Bad request"
+// @Failure 500 {string} string "Internal server error"
 // @Router /api/users/{id} [get]
 func GetUser(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -336,6 +352,17 @@ func GetUser(store Storage) http.HandlerFunc {
 	}
 }
 
+// UpdateUser handles updating user information
+// @Summary Update user information
+// @Description Update user's avatar and username
+// @Tags users
+// @Accept multipart/form-data
+// @Param avatar formData file false "User's avatar"
+// @Param username formData string true "User's username"
+// @Success 200 {string} string "OK"
+// @Failure 400 {string} string "Bad request"
+// @Failure 500 {string} string "Internal server error"
+// @Router /api/users/update [put]
 func UpdateUser(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		creds, err := auth.ExtractCredentials(r.Header.Get("Authorization"))
@@ -385,20 +412,18 @@ func UpdateUser(store Storage) http.HandlerFunc {
 	}
 }
 
-// CheckUsernameResponse represents the response structure for checking a username
-// @Description Check if a username exists
 type CheckUsernameResponse struct {
 	Found bool `json:"found"`
 }
 
-// CheckUsername is the handler function for checking the existence of a username
-// @Summary Check if a username exists
-// @Description Check if a username exists in the database
+// CheckUsername handles checking if a username is available
+// @Summary Check username availability
+// @Description Check if a username is available
 // @Tags users
 // @Produce json
 // @Param username query string true "Username to check"
 // @Success 200 {object} CheckUsernameResponse
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure 500 {string} string "Internal server error"
 // @Router /api/users/check-username [get]
 func CheckUsername(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -419,28 +444,26 @@ func CheckUsername(store Storage) http.HandlerFunc {
 	}
 }
 
-// CheckCodeRequest represents the request structure for checking a code
-// @Description Request structure for checking a code
 type CheckCodeRequest struct {
 	Username string `json:"username"`
 	Code     string `json:"code"`
 }
 
-// CheckCodeResponse represents the response structure for checking a code
-// @Description Response structure for checking a code
 type CheckCodeResponse struct {
 	Valid bool `json:"valid"`
 }
 
-// CheckCode is the handler function for checking the validity of a code
-// @Summary Check if a code is valid
-// @Description Check if the provided code is valid for the given username
+// CheckCode handles checking if a verification code is valid
+// @Summary Check verification code
+// @Description Check if a verification code is valid for the given username
 // @Tags users
 // @Accept json
 // @Produce json
-// @Param request body CheckCodeRequest true "Request body for checking code"
+// @Param checkCodeRequest body CheckCodeRequest true "Check code request"
 // @Success 200 {object} CheckCodeResponse
-// @Failure 500 {string} string "Internal Server Error"
+// @Failure 400 {string} string "Bad request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal server error"
 // @Router /api/users/check-code [post]
 func CheckCode(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

@@ -108,9 +108,6 @@ func (s *UserStorage) RefreshToken(id int, agent, oldRefresh string) (string, st
 		return "", "", err
 	}
 	if refresh != oldRefresh {
-		fmt.Println()
-		fmt.Println(refresh, " --- ", oldRefresh)
-		fmt.Println()
 		return "", "", fmt.Errorf("invalid refresh token")
 	}
 

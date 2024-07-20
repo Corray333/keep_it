@@ -1,6 +1,5 @@
 definitions:
   transport.CheckCodeRequest:
-    description: Request structure for checking a code
     properties:
       code:
         type: string
@@ -8,13 +7,11 @@ definitions:
         type: string
     type: object
   transport.CheckCodeResponse:
-    description: Response structure for checking a code
     properties:
       valid:
         type: boolean
     type: object
   transport.CheckUsernameResponse:
-    description: Check if a username exists
     properties:
       found:
         type: boolean
@@ -66,8 +63,6 @@ definitions:
     properties:
       authorization:
         type: string
-      refresh:
-        type: string
       user:
         $ref: '#/definitions/types.User'
     type: object
@@ -112,6 +107,11 @@ definitions:
       note_id:
         type: string
     type: object
+  transport.RefreshAccessTokenResponse:
+    properties:
+      authorization:
+        type: string
+    type: object
   transport.SignUpRequest:
     properties:
       code:
@@ -120,6 +120,13 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  transport.SignUpResponse:
+    properties:
+      authorization:
+        type: string
+      user:
+        $ref: '#/definitions/types.User'
     type: object
   transport.UpdateNoteRequest:
     additionalProperties: true
@@ -322,9 +329,7 @@ paths:
       - tags
   /api/users/{id}:
     get:
-      consumes:
-      - application/json
-      description: Retrieves a user by their ID.
+      description: Get user information by ID
       parameters:
       - description: User ID
         in: path
@@ -338,18 +343,26 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/types.User'
-      summary: Get a user by ID
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get user information
       tags:
       - users
   /api/users/check-code:
     post:
       consumes:
       - application/json
-      description: Check if the provided code is valid for the given username
+      description: Check if a verification code is valid for the given username
       parameters:
-      - description: Request body for checking code
+      - description: Check code request
         in: body
-        name: request
+        name: checkCodeRequest
         required: true
         schema:
           $ref: '#/definitions/transport.CheckCodeRequest'
@@ -360,16 +373,24 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/transport.CheckCodeResponse'
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad request
           schema:
             type: string
-      summary: Check if a code is valid
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Check verification code
       tags:
       - users
   /api/users/check-username:
     get:
-      description: Check if a username exists in the database
+      description: Check if a username is available
       parameters:
       - description: Username to check
         in: query
@@ -384,22 +405,21 @@ paths:
           schema:
             $ref: '#/definitions/transport.CheckUsernameResponse'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
             type: string
-      summary: Check if a username exists
+      summary: Check username availability
       tags:
       - users
   /api/users/login:
     post:
       consumes:
       - application/json
-      description: Logs in a user and returns the user ID, refresh token, and access
-        token.
+      description: Log in a user with username and password
       parameters:
-      - description: User details
+      - description: Login request
         in: body
-        name: user
+        name: loginRequest
         required: true
         schema:
           $ref: '#/definitions/transport.LoginRequest'
@@ -410,27 +430,45 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/transport.LogInResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
       summary: Log in a user
       tags:
       - users
-  /api/users/refresh_token:
+  /api/users/refresh:
     get:
       consumes:
       - application/json
-      description: Refreshes the access token using the refresh token.
-      parameters:
-      - description: Refresh token
-        in: query
-        name: refresh
-        required: true
-        type: string
+      description: Refresh the access token using the refresh token in cookies
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/transport.LogInResponse'
+            $ref: '#/definitions/transport.RefreshAccessTokenResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
       summary: Refresh access token
       tags:
       - users
@@ -438,12 +476,11 @@ paths:
     post:
       consumes:
       - application/json
-      description: Registers a new user and returns the user ID, refresh token, and
-        access token.
+      description: Sign up a new user with username, password, and verification code
       parameters:
-      - description: User details
+      - description: Sign up request
         in: body
-        name: user
+        name: signupRequest
         required: true
         schema:
           $ref: '#/definitions/transport.SignUpRequest'
@@ -453,8 +490,51 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/transport.LogInResponse'
+            $ref: '#/definitions/transport.SignUpResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
       summary: Sign up a new user
+      tags:
+      - users
+  /api/users/update:
+    put:
+      consumes:
+      - multipart/form-data
+      description: Update user's avatar and username
+      parameters:
+      - description: User's avatar
+        in: formData
+        name: avatar
+        type: file
+      - description: User's username
+        in: formData
+        name: username
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Update user information
       tags:
       - users
 swagger: "2.0"

@@ -268,7 +268,7 @@ const docTemplate = `{
         },
         "/api/users/check-code": {
             "post": {
-                "description": "Check if the provided code is valid for the given username",
+                "description": "Check if a verification code is valid for the given username",
                 "consumes": [
                     "application/json"
                 ],
@@ -278,11 +278,11 @@ const docTemplate = `{
                 "tags": [
                     "users"
                 ],
-                "summary": "Check if a code is valid",
+                "summary": "Check verification code",
                 "parameters": [
                     {
-                        "description": "Request body for checking code",
-                        "name": "request",
+                        "description": "Check code request",
+                        "name": "checkCodeRequest",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -297,8 +297,20 @@ const docTemplate = `{
                             "$ref": "#/definitions/transport.CheckCodeResponse"
                         }
                     },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -308,14 +320,14 @@ const docTemplate = `{
         },
         "/api/users/check-username": {
             "get": {
-                "description": "Check if a username exists in the database",
+                "description": "Check if a username is available",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "users"
                 ],
-                "summary": "Check if a username exists",
+                "summary": "Check username availability",
                 "parameters": [
                     {
                         "type": "string",
@@ -333,7 +345,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error",
                         "schema": {
                             "type": "string"
                         }
@@ -343,7 +355,7 @@ const docTemplate = `{
         },
         "/api/users/login": {
             "post": {
-                "description": "Logs in a user and returns the user ID, refresh token, and access token.",
+                "description": "Log in a user with username and password",
                 "consumes": [
                     "application/json"
                 ],
@@ -356,8 +368,8 @@ const docTemplate = `{
                 "summary": "Log in a user",
                 "parameters": [
                     {
-                        "description": "User details",
-                        "name": "user",
+                        "description": "Login request",
+                        "name": "loginRequest",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -371,13 +383,31 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/transport.LogInResponse"
                         }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
         },
-        "/api/users/refresh_token": {
+        "/api/users/refresh": {
             "get": {
-                "description": "Refreshes the access token using the refresh token.",
+                "description": "Refresh the access token using the refresh token in cookies",
                 "consumes": [
                     "application/json"
                 ],
@@ -388,20 +418,29 @@ const docTemplate = `{
                     "users"
                 ],
                 "summary": "Refresh access token",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Refresh token",
-                        "name": "refresh",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/transport.LogInResponse"
+                            "$ref": "#/definitions/transport.RefreshAccessTokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -409,7 +448,7 @@ const docTemplate = `{
         },
         "/api/users/signup": {
             "post": {
-                "description": "Registers a new user and returns the user ID, refresh token, and access token.",
+                "description": "Sign up a new user with username, password, and verification code",
                 "consumes": [
                     "application/json"
                 ],
@@ -422,8 +461,8 @@ const docTemplate = `{
                 "summary": "Sign up a new user",
                 "parameters": [
                     {
-                        "description": "User details",
-                        "name": "user",
+                        "description": "Sign up request",
+                        "name": "signupRequest",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -435,7 +474,72 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/transport.LogInResponse"
+                            "$ref": "#/definitions/transport.SignUpResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/update": {
+            "put": {
+                "description": "Update user's avatar and username",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update user information",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "User's avatar",
+                        "name": "avatar",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "User's username",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -443,17 +547,14 @@ const docTemplate = `{
         },
         "/api/users/{id}": {
             "get": {
-                "description": "Retrieves a user by their ID.",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Get user information by ID",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "users"
                 ],
-                "summary": "Get a user by ID",
+                "summary": "Get user information",
                 "parameters": [
                     {
                         "type": "string",
@@ -469,6 +570,18 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/types.User"
                         }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
@@ -476,7 +589,6 @@ const docTemplate = `{
     },
     "definitions": {
         "transport.CheckCodeRequest": {
-            "description": "Request structure for checking a code",
             "type": "object",
             "properties": {
                 "code": {
@@ -488,7 +600,6 @@ const docTemplate = `{
             }
         },
         "transport.CheckCodeResponse": {
-            "description": "Response structure for checking a code",
             "type": "object",
             "properties": {
                 "valid": {
@@ -497,7 +608,6 @@ const docTemplate = `{
             }
         },
         "transport.CheckUsernameResponse": {
-            "description": "Check if a username exists",
             "type": "object",
             "properties": {
                 "found": {
@@ -576,9 +686,6 @@ const docTemplate = `{
                 "authorization": {
                     "type": "string"
                 },
-                "refresh": {
-                    "type": "string"
-                },
                 "user": {
                     "$ref": "#/definitions/types.User"
                 }
@@ -646,6 +753,14 @@ const docTemplate = `{
                 }
             }
         },
+        "transport.RefreshAccessTokenResponse": {
+            "type": "object",
+            "properties": {
+                "authorization": {
+                    "type": "string"
+                }
+            }
+        },
         "transport.SignUpRequest": {
             "type": "object",
             "properties": {
@@ -657,6 +772,17 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "transport.SignUpResponse": {
+            "type": "object",
+            "properties": {
+                "authorization": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/types.User"
                 }
             }
         },

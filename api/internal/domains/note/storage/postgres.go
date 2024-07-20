@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -28,6 +29,7 @@ func NewStorage(db *sqlx.DB, redis *redis.Client) *NoteStorage {
 }
 
 func (s *NoteStorage) CreateNote(note *types.Note) (string, error) {
+
 	// TODO: forbid if no access
 	tx, err := s.db.Beginx()
 	defer tx.Rollback()
@@ -37,7 +39,7 @@ func (s *NoteStorage) CreateNote(note *types.Note) (string, error) {
 
 	note_id := ""
 
-	if err := tx.QueryRow("INSERT INTO notes (creator, title, source, original, font, created_at, type, category_owner, category_id, content) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING note_id", note.Creator, note.Title, note.Source, note.Original, note.Font, note.CreatedAt, note.Type, note.CategoryOwner, note.CategoryId, string(note.Content)).Scan(&note_id); err != nil {
+	if err := tx.QueryRow("INSERT INTO notes (creator, title, source, original, font, created_at, type, category_owner, category_id, content) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING note_id", note.Creator, note.Title, note.Source, note.OriginalRaw, note.Font, note.CreatedAt, note.Type, note.CategoryOwner, note.CategoryId, note.ContentRaw).Scan(&note_id); err != nil {
 		return "", err
 	}
 
@@ -56,6 +58,14 @@ func (s *NoteStorage) GetNote(note_id string) (*types.Note, error) {
 		return nil, err
 	}
 	if err := s.db.Select(&note.Tags, "SELECT tag_id, owner, text, color FROM note_tag NATURAL JOIN tags WHERE note_id = $1", note_id); err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(*note.ContentRaw, &note.Content); err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(*note.OriginalRaw, &note.Original); err != nil {
 		return nil, err
 	}
 

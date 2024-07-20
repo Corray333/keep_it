@@ -123,11 +123,44 @@ type NewNoteResponse struct {
 // @Router /api/notes [post]
 func CreateNote(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		note := &types.Note{}
-		if err := json.NewDecoder(r.Body).Decode(note); err != nil {
+		req := &NewNoteRequest{}
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 			slog.Error("error while decoding request body: " + err.Error())
 			w.WriteHeader(http.StatusBadRequest)
 			return
+		}
+
+		originalBytes, err := json.Marshal(req.Original)
+		if err != nil {
+			slog.Error("error while marshaling original: " + err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		contentBytes, err := json.Marshal(req.Content)
+		if err != nil {
+			slog.Error("error while marshaling content: " + err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		noteContentRaw := json.RawMessage(originalBytes)
+		noteOriginalRaw := json.RawMessage(contentBytes)
+
+		note := &types.Note{
+			Tags:          req.Tags,
+			Title:         req.Title,
+			Source:        req.Source,
+			Original:      req.Original,
+			Font:          req.Font,
+			CreatedAt:     &req.CreatedAt,
+			CopiedAt:      req.CopiedAt,
+			Type:          req.Type,
+			Checked:       req.Checked,
+			Content:       req.Content,
+			Cover:         req.Cover,
+			CategoryOwner: &req.CategoryOwner,
+			ContentRaw:    &noteContentRaw,
+			OriginalRaw:   &noteOriginalRaw,
 		}
 
 		creds := r.Context().Value("creds").(auth.Credentials)

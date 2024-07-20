@@ -134,10 +134,10 @@ func (app *App) Run() {
 				continue
 			}
 			note := types.Note{
-				Original: marshalled,
+				Original: string(marshalled),
 				Source:   "tg",
 				Type:     1,
-				Content:  json.RawMessage(update.Message.Text),
+				Content:  update.Message.Text,
 			}
 			t, err := json.Marshal(note)
 
