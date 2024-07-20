@@ -5,6 +5,62 @@
     },
     "paths": {
         "/api/notes": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List notes for the authenticated user with optional filters",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notes"
+                ],
+                "summary": "List user notes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access JWT",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of notes with new offset and has more flag",
+                        "schema": {
+                            "$ref": "#/definitions/transport.ListNotesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Create a new note",
                 "consumes": [
@@ -669,6 +725,23 @@
                 }
             }
         },
+        "transport.ListNotesResponse": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "notes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.Note"
+                    }
+                },
+                "offset": {
+                    "type": "integer"
+                }
+            }
+        },
         "transport.LogInResponse": {
             "type": "object",
             "properties": {
@@ -778,6 +851,55 @@
         "transport.UpdateNoteRequest": {
             "type": "object",
             "additionalProperties": true
+        },
+        "types.Note": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "integer"
+                },
+                "category_owner": {
+                    "type": "integer"
+                },
+                "checked": {
+                    "type": "boolean"
+                },
+                "content": {},
+                "copied_at": {
+                    "type": "integer"
+                },
+                "cover": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "creator": {
+                    "type": "integer"
+                },
+                "font": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "original": {},
+                "source": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.Tag"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
+                }
+            }
         },
         "types.Tag": {
             "type": "object",

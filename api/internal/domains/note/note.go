@@ -22,7 +22,7 @@ func (c Controller) Init(router *chi.Mux, storeGlobal global_storage.Storage) {
 
 	router.With(auth.NewAuthMiddleware()).Post("/api/tags", transport.CreateTag(store))
 	router.With(auth.NewAuthMiddleware()).Post("/api/notes", transport.CreateNote(store))
-	router.With(auth.NewAuthMiddleware()).Get("/api/notes", transport.CreateNote(store))
+	router.With(auth.NewAuthMiddleware()).Get("/api/notes", transport.ListNotes(store))
 	router.With(auth.NewAuthMiddleware()).Patch("/api/notes/{note_id}", transport.UpdateNote(store))
 	router.With(auth.NewAuthMiddleware()).Get("/api/notes/{note_id}", transport.GetNote(store))
 }

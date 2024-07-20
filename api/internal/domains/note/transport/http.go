@@ -2,8 +2,10 @@ package transport
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/Corray333/keep_it/internal/domains/note/storage"
 	"github.com/Corray333/keep_it/internal/domains/note/types"
@@ -17,6 +19,7 @@ type Storage interface {
 	CheckNoteAccess(note_id string, user_id int) (bool, error)
 	CreateTag(tag *types.Tag) (*types.Tag, error)
 	UpdateNote(note_id string, data map[string]interface{}) error
+	GetNotes(user_id int, offset int, filter map[string]interface{}) ([]*types.Note, bool, error)
 }
 
 type GetNoteResponse struct {
@@ -89,6 +92,67 @@ func GetNote(store Storage) http.HandlerFunc {
 	}
 }
 
+type ListNotesResponse struct {
+	Notes   []*types.Note `json:"notes"`
+	HasMore bool          `json:"has_more"`
+	Offset  int           `json:"offset"`
+}
+
+// ListNotes handles listing user notes
+// @Summary List user notes
+// @Description List notes for the authenticated user with optional filters
+// @Tags notes
+// @Produce json
+// @Param Authorization header string true "Access JWT"
+// @Param offset query int false "Offset for pagination"
+// @Success 200 {object} ListNotesResponse "List of notes with new offset and has more flag"
+// @Failure 400 {string} string "Bad request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal server error"
+// @Security ApiKeyAuth
+// @Router /api/notes [get]
+func ListNotes(store Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		creds := r.Context().Value("creds").(auth.Credentials)
+
+		if creds.ID == 0 {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		req := map[string]interface{}{}
+
+		for _, val := range r.URL.Query() {
+			fmt.Println(val)
+		}
+
+		offsetRaw := r.URL.Query().Get("offset")
+		offset, err := strconv.Atoi(offsetRaw)
+		if err != nil {
+			offset = 0
+		}
+
+		notes, hasMore, err := store.GetNotes(creds.ID, offset, req)
+		if err != nil {
+			slog.Error("error while getting notes: " + err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(ListNotesResponse{
+			Notes:   notes,
+			HasMore: hasMore,
+			Offset:  offset + len(notes),
+		}); err != nil {
+			slog.Error("error while encoding response: " + err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+	}
+}
+
 type NewNoteRequest struct {
 	Tags          []types.Tag `json:"tags" db:"tags"`
 	Title         string      `json:"title" db:"title"`
@@ -143,8 +207,8 @@ func CreateNote(store Storage) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		noteContentRaw := json.RawMessage(originalBytes)
-		noteOriginalRaw := json.RawMessage(contentBytes)
+		noteContentRaw := json.RawMessage(contentBytes)
+		noteOriginalRaw := json.RawMessage(originalBytes)
 
 		note := &types.Note{
 			Tags:          req.Tags,

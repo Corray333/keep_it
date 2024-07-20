@@ -23,9 +23,11 @@ var (
 
 // New creates a new storage and tables
 func NewStorage(db *sqlx.DB, redis *redis.Client) *NoteStorage {
-	return &NoteStorage{
+	store := &NoteStorage{
 		db: db,
 	}
+
+	return store
 }
 
 func (s *NoteStorage) CreateNote(note *types.Note) (string, error) {
@@ -72,18 +74,48 @@ func (s *NoteStorage) GetNote(note_id string) (*types.Note, error) {
 	return note, nil
 }
 
-func (s *NoteStorage) GetNotes(user_id int, filter map[string]interface{}) ([]types.Note, error) {
+func (s *NoteStorage) GetNotes(user_id int, offset int, filter map[string]interface{}) ([]*types.Note, bool, error) {
 	sqfilter := sq.Eq(filter)
 	sqfilter["user_id"] = user_id
 
 	// TODO: add pagination
 
-	// sql, args, err := sq.Select("*").From("user_note_access").Join("notes on user_note_access.note_id = notes.note_id").Where(sqfilter).ToSql()
-	// if err != nil {
-	// 	return nil, err
-	// }
+	sql, args, err := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).
+		Select("notes.note_id, creator, title, source, original, font, created_at, copied_at, type, checked, content, cover, category_owner, category_id").
+		From("user_note_access").
+		Join("notes on user_note_access.note_id = notes.note_id").
+		Where(sqfilter).
+		Offset(uint64(offset)).
+		Limit(51).
+		ToSql()
+	if err != nil {
+		return nil, false, err
+	}
 
-	return nil, nil
+	notes := []*types.Note{}
+
+	if err := s.db.Select(&notes, sql, args...); err != nil {
+		return nil, false, err
+	}
+
+	for _, note := range notes {
+		if err := s.db.Select(&note.Tags, "SELECT tag_id, owner, text, color FROM note_tag NATURAL JOIN tags WHERE note_id = $1", note.ID); err != nil {
+			return nil, false, err
+		}
+
+		if err := json.Unmarshal(*note.ContentRaw, &note.Content); err != nil {
+			return nil, false, err
+		}
+
+		if err := json.Unmarshal(*note.OriginalRaw, &note.Original); err != nil {
+			return nil, false, err
+		}
+	}
+	if len(notes) == 51 {
+		return notes[:50], true, nil
+	}
+
+	return notes, false, nil
 }
 
 func (s *NoteStorage) CheckNoteAccess(note_id string, user_id int) (bool, error) {

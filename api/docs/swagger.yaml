@@ -59,6 +59,17 @@ definitions:
       type:
         type: integer
     type: object
+  transport.ListNotesResponse:
+    properties:
+      has_more:
+        type: boolean
+      notes:
+        items:
+          $ref: '#/definitions/types.Note'
+        type: array
+      offset:
+        type: integer
+    type: object
   transport.LogInResponse:
     properties:
       authorization:
@@ -131,6 +142,39 @@ definitions:
   transport.UpdateNoteRequest:
     additionalProperties: true
     type: object
+  types.Note:
+    properties:
+      category_id:
+        type: integer
+      category_owner:
+        type: integer
+      checked:
+        type: boolean
+      content: {}
+      copied_at:
+        type: integer
+      cover:
+        type: string
+      created_at:
+        type: integer
+      creator:
+        type: integer
+      font:
+        type: string
+      id:
+        type: string
+      original: {}
+      source:
+        type: string
+      tags:
+        items:
+          $ref: '#/definitions/types.Tag'
+        type: array
+      title:
+        type: string
+      type:
+        type: integer
+    type: object
   types.Tag:
     properties:
       color:
@@ -161,6 +205,42 @@ info:
   contact: {}
 paths:
   /api/notes:
+    get:
+      description: List notes for the authenticated user with optional filters
+      parameters:
+      - description: Access JWT
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Offset for pagination
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of notes with new offset and has more flag
+          schema:
+            $ref: '#/definitions/transport.ListNotesResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: List user notes
+      tags:
+      - notes
     post:
       consumes:
       - application/json
