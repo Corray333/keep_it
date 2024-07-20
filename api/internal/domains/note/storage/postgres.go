@@ -63,7 +63,7 @@ func (s *NoteStorage) GetNote(note_id string) (*types.Note, error) {
 		return nil, err
 	}
 
-	if err := json.Unmarshal(*note.ContentRaw, &note.Content); err != nil {
+	if err := json.Unmarshal([]byte(note.ContentRaw), &note.Content); err != nil {
 		return nil, err
 	}
 
@@ -103,7 +103,7 @@ func (s *NoteStorage) GetNotes(user_id int, offset int, filter map[string]interf
 			return nil, false, err
 		}
 
-		if err := json.Unmarshal(*note.ContentRaw, &note.Content); err != nil {
+		if err := json.Unmarshal([]byte(note.ContentRaw), &note.Content); err != nil {
 			return nil, false, err
 		}
 

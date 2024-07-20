@@ -207,7 +207,7 @@ func CreateNote(store Storage) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		noteContentRaw := json.RawMessage(contentBytes)
+		noteContentRaw := string(contentBytes)
 		noteOriginalRaw := json.RawMessage(originalBytes)
 
 		note := &types.Note{
@@ -223,7 +223,7 @@ func CreateNote(store Storage) http.HandlerFunc {
 			Content:       req.Content,
 			Cover:         req.Cover,
 			CategoryOwner: &req.CategoryOwner,
-			ContentRaw:    &noteContentRaw,
+			ContentRaw:    noteContentRaw,
 			OriginalRaw:   &noteOriginalRaw,
 		}
 

@@ -16,7 +16,7 @@ type Note struct {
 	Type          int16            `json:"type" db:"type"`
 	Checked       bool             `json:"checked" db:"checked"`
 	Content       any              `json:"content" db:"-"`
-	ContentRaw    *json.RawMessage `json:"-" db:"content"`
+	ContentRaw    string           `json:"-" db:"content"`
 	Cover         string           `json:"cover" db:"cover"`
 	CategoryOwner *int64           `json:"category_owner" db:"category_owner"`
 	CategoryId    *int             `json:"category_id" db:"category_id"`
