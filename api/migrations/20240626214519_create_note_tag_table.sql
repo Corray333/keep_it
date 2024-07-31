@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS note_tag (
     note_id UUID NOT NULL,
     tag_id BIGINT,
     owner BIGINT,
-    FOREIGN KEY (tag_id, owner) REFERENCES tags(tag_id, owner),
+    FOREIGN KEY (tag_id, owner) REFERENCES tags(tag_id, owner) ON DELETE CASCADE,
     CONSTRAINT note_tag_pkey PRIMARY KEY (note_id, tag_id, owner)
 );
 -- +goose StatementEnd

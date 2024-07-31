@@ -1,9 +1,12 @@
 <script setup>
-import { ref, onBeforeMount } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useStore } from 'vuex'
 import NoteCard from '../components/NoteCard.vue'
 import axios from 'axios'
 
-const notes = ref([{}])
+const notes = ref([])
+
+const store = useStore()
 
 
 
@@ -187,13 +190,16 @@ const loadNotes = async () =>{
             }
         })
 
+        console.log("WTF")
+        console.log(data.notes)
+
         notes.value = data.notes
     } catch (error) {
         console.log(error)
     }
 }
 
-onBeforeMount(()=>{
+onMounted(()=>{
     loadNotes()
 })
 

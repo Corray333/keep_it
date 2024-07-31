@@ -8,6 +8,8 @@ type Note struct {
 	Tags          []Tag            `json:"tags" db:"tags"`
 	Title         string           `json:"title" db:"title"`
 	Source        string           `json:"source" db:"source"`
+	Icon          any              `json:"icon" db:"-"`
+	IconRaw       json.RawMessage  `json:"-" db:"icon"`
 	Original      any              `json:"original" db:"-"`
 	OriginalRaw   *json.RawMessage `json:"-" db:"original"`
 	Font          string           `json:"font" db:"font"`

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -41,7 +42,7 @@ func (s *NoteStorage) CreateNote(note *types.Note) (string, error) {
 
 	note_id := ""
 
-	if err := tx.QueryRow("INSERT INTO notes (creator, title, source, original, font, created_at, type, category_owner, category_id, content) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING note_id", note.Creator, note.Title, note.Source, note.OriginalRaw, note.Font, note.CreatedAt, note.Type, note.CategoryOwner, note.CategoryId, note.ContentRaw).Scan(&note_id); err != nil {
+	if err := tx.QueryRow("INSERT INTO notes (creator, title, source, original, font, created_at, type, category_owner, category_id, content, icon) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING note_id", note.Creator, note.Title, note.Source, note.OriginalRaw, note.Font, note.CreatedAt, note.Type, note.CategoryOwner, note.CategoryId, note.ContentRaw, note.IconRaw).Scan(&note_id); err != nil {
 		return "", err
 	}
 
@@ -71,6 +72,10 @@ func (s *NoteStorage) GetNote(note_id string) (*types.Note, error) {
 		return nil, err
 	}
 
+	if err := json.Unmarshal([]byte(note.IconRaw), &note.Icon); err != nil {
+		return nil, err
+	}
+
 	return note, nil
 }
 
@@ -81,7 +86,7 @@ func (s *NoteStorage) GetNotes(user_id int, offset int, filter map[string]interf
 	// TODO: add pagination
 
 	sql, args, err := sq.StatementBuilder.PlaceholderFormat(sq.Dollar).
-		Select("notes.note_id, creator, title, source, original, font, created_at, copied_at, type, checked, content, cover, category_owner, category_id").
+		Select("notes.note_id, creator, title, source, original, font, created_at, copied_at, type, checked, content, icon, cover, category_owner, category_id").
 		From("user_note_access").
 		Join("notes on user_note_access.note_id = notes.note_id").
 		Where(sqfilter).
@@ -110,6 +115,10 @@ func (s *NoteStorage) GetNotes(user_id int, offset int, filter map[string]interf
 		if err := json.Unmarshal(*note.OriginalRaw, &note.Original); err != nil {
 			return nil, false, err
 		}
+
+		if err := json.Unmarshal([]byte(note.IconRaw), &note.Icon); err != nil {
+			return nil, false, err
+		}
 	}
 	if len(notes) == 51 {
 		return notes[:50], true, nil
@@ -128,10 +137,6 @@ func (s *NoteStorage) CheckNoteAccess(note_id string, user_id int) (bool, error)
 
 	return exists, nil
 
-}
-
-func (s *NoteStorage) DeleteNote(note_id string) error {
-	return nil
 }
 
 func (s *NoteStorage) CreateTag(tag *types.Tag) (*types.Tag, error) {
@@ -219,4 +224,21 @@ func (s *NoteStorage) UpdateNote(note_id string, data map[string]interface{}) er
 	}
 
 	return tx.Commit()
+}
+
+func (s *NoteStorage) DeleteNote(note_id string, uid int) error {
+
+	res, err := s.db.Exec("DELETE FROM notes WHERE note_id = $1 AND creator = $2", note_id, uid)
+	if err != nil {
+		return err
+	}
+
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }

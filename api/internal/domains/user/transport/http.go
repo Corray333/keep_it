@@ -65,6 +65,7 @@ type SignUpRequest struct {
 // @Router /api/users/signup [post]
 func SignUp(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		request := SignUpRequest{}
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -167,6 +168,7 @@ type LoginRequest struct {
 // @Router /api/users/login [post]
 func LogIn(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		// TODO: check and remove expired tokens
 
 		request := LoginRequest{}
@@ -251,6 +253,7 @@ type RefreshAccessTokenResponse struct {
 // @Router /api/users/refresh [get]
 func RefreshAccessToken(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		refreshCookie, err := r.Cookie("Refresh")
 		if err != nil {
 			http.Error(w, "Failed to get refresh cookie", http.StatusUnauthorized)
@@ -321,6 +324,7 @@ func RefreshAccessToken(store Storage) http.HandlerFunc {
 // @Router /api/users/{id} [get]
 func GetUser(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		userId := chi.URLParam(r, "id")
 		if userId == "0" {
 			creds, err := auth.ExtractCredentials(r.Header.Get("Authorization"))
@@ -365,6 +369,7 @@ func GetUser(store Storage) http.HandlerFunc {
 // @Router /api/users/update [put]
 func UpdateUser(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		creds, err := auth.ExtractCredentials(r.Header.Get("Authorization"))
 		if err != nil {
 			http.Error(w, "Failed to extract credentials", http.StatusBadRequest)
@@ -427,6 +432,7 @@ type CheckUsernameResponse struct {
 // @Router /api/users/check-username [get]
 func CheckUsername(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		username := r.URL.Query().Get("username")
 		res, err := store.CheckUsername(username)
 		if err != nil {
@@ -467,6 +473,7 @@ type CheckCodeResponse struct {
 // @Router /api/users/check-code [post]
 func CheckCode(store Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		req := &CheckCodeRequest{}
 
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
@@ -493,6 +500,7 @@ func CheckCode(store Storage) http.HandlerFunc {
 
 func UploadImage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		// TODO: add image compression
 		if err := r.ParseMultipartForm(MaxFileSize); err != nil {
 			slog.Error("error parsing multipart form: " + err.Error())

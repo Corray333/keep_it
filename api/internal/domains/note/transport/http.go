@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -20,6 +21,7 @@ type Storage interface {
 	CreateTag(tag *types.Tag) (*types.Tag, error)
 	UpdateNote(note_id string, data map[string]interface{}) error
 	GetNotes(user_id int, offset int, filter map[string]interface{}) ([]*types.Note, bool, error)
+	DeleteNote(note_id string, uid int) error
 }
 
 type GetNoteResponse struct {
@@ -157,6 +159,7 @@ type NewNoteRequest struct {
 	Tags          []types.Tag `json:"tags" db:"tags"`
 	Title         string      `json:"title" db:"title"`
 	Source        string      `json:"source" db:"source"`
+	Icon          any         `json:"icon" db:"icon"`
 	Original      any         `json:"original" db:"original"`
 	Font          string      `json:"font" db:"font"`
 	CreatedAt     int64       `json:"created_at" db:"created_at"`
@@ -207,6 +210,14 @@ func CreateNote(store Storage) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
+		iconBytes, err := json.Marshal(req.Icon)
+		if err != nil {
+			slog.Error("error while marshaling icon: " + err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		noteContentRaw := string(contentBytes)
 		noteOriginalRaw := json.RawMessage(originalBytes)
 
@@ -214,6 +225,7 @@ func CreateNote(store Storage) http.HandlerFunc {
 			Tags:          req.Tags,
 			Title:         req.Title,
 			Source:        req.Source,
+			Icon:          req.Icon,
 			Original:      req.Original,
 			Font:          req.Font,
 			CreatedAt:     &req.CreatedAt,
@@ -225,6 +237,7 @@ func CreateNote(store Storage) http.HandlerFunc {
 			CategoryOwner: &req.CategoryOwner,
 			ContentRaw:    noteContentRaw,
 			OriginalRaw:   &noteOriginalRaw,
+			IconRaw:       json.RawMessage(iconBytes),
 		}
 
 		creds := r.Context().Value("creds").(auth.Credentials)
@@ -245,6 +258,39 @@ func CreateNote(store Storage) http.HandlerFunc {
 		w.WriteHeader(http.StatusCreated)
 		if err := json.NewEncoder(w).Encode(NewNoteResponse{NoteID: note_id}); err != nil {
 			slog.Error("error while encoding response: " + err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+	}
+}
+
+// @Summary Delete note
+// @Description Delete a specific note by its ID
+// @Tags notes
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Access JWT"
+// @Param note_id path string true "Note ID"
+// @Success 200 {string} string "OK"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router /api/notes/{note_id} [delete]
+func DeleteNote(store Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		creds := r.Context().Value("creds").(auth.Credentials)
+		if creds.ID == 0 {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		note_id := chi.URLParam(r, "note_id")
+		if err := store.DeleteNote(note_id, creds.ID); err != nil {
+			if err == sql.ErrNoRows {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			slog.Error("error while deleting note: " + err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

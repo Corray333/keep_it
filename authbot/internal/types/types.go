@@ -15,6 +15,7 @@ type Note struct {
 	ID            string     `json:"id" db:"note_id"`
 	Creator       int        `json:"creator" db:"creator"`
 	Title         string     `json:"title" db:"title"` // Using null.String for nullable fields
+	Icon          string     `json:"icon" db:"icon"`
 	Source        string     `json:"source" db:"source"`
 	Original      string     `json:"original" db:"original"`
 	Font          string     `json:"font" db:"font"`

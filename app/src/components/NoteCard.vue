@@ -1,6 +1,5 @@
 <script setup>
 import { Icon } from '@iconify/vue'
-import { formToJSON } from 'axios';
 import { ref, computed } from 'vue'
 
 const props = defineProps(['note'])
@@ -59,7 +58,7 @@ const content = computed(()=>{
             <span class="header flex gap-2">
                 <Icon v-if="note.icon.type=='icon'" class=" text-xl" :class="`text-[${note.icon.color}]`" :icon="note.icon.icon" />
                 <p v-else>{{ note.icon.emoji }}</p>
-                <a :href="note.from.link"><i>{{ note.from.text }}</i></a>
+                <a :href="note.original.link"><i>{{ note.original.text }}</i></a>
             </span>
             <div class="tags grid grid-rows-2 grid-cols-2 gap-1">
                 <span 
