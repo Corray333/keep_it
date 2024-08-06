@@ -14,6 +14,11 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+type service interface{}
+type server struct {
+	service service
+}
+
 type Storage interface {
 	GetNote(note_id string) (*types.Note, error)
 	CreateNote(note *types.Note) (string, error)
