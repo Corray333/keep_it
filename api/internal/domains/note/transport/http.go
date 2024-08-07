@@ -3,7 +3,6 @@ package transport
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -129,9 +128,10 @@ func ListNotes(store Storage) http.HandlerFunc {
 		}
 
 		req := map[string]interface{}{}
-
-		for _, val := range r.URL.Query() {
-			fmt.Println(val)
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			slog.Error("error while decoding request: " + err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 
 		offsetRaw := r.URL.Query().Get("offset")
@@ -307,10 +307,6 @@ type CreateTagRequest struct {
 	Tag types.Tag `json:"tag"`
 }
 
-type CreateTagResponse struct {
-	Tag types.Tag `json:"tag"`
-}
-
 // @Summary Create Tag
 // @Description Create a new tag
 // @Tags tags
@@ -347,7 +343,7 @@ func CreateTag(store Storage) http.HandlerFunc {
 			return
 		}
 
-		if err := json.NewEncoder(w).Encode(CreateTagResponse{Tag: *tag}); err != nil {
+		if err := json.NewEncoder(w).Encode(tag); err != nil {
 			slog.Error("error while encoding response: " + err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			return

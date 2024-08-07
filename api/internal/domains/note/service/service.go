@@ -39,3 +39,23 @@ func (s *service) GetNote(uid int, noteID string) (*types.Note, error) {
 	}
 	return note, nil
 }
+
+func (s *service) ListNotes(uid int, offset int, filters map[string]interface{}) ([]*types.Note, bool, error) {
+	return s.repo.GetNotes(uid, offset, filters)
+}
+
+func (s *service) CreateNote(note *types.Note) (string, error) {
+	return s.repo.CreateNote(note)
+}
+
+func (s *service) DeleteNote(note_id string, uid int) error {
+	return s.repo.DeleteNote(note_id, uid)
+}
+
+func (s *service) CreateTg(tag *types.Tag) (*types.Tag, error) {
+	return s.repo.CreateTag(tag)
+}
+
+func (s *service) UpdateNote(note_id string, data map[string]interface{}) error {
+	return s.repo.UpdateNote(note_id, data)
+}
