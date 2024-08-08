@@ -21,6 +21,12 @@ type service struct {
 	repo repository
 }
 
+func NewService(repo repository) *service {
+	return &service{
+		repo: repo,
+	}
+}
+
 func (s *service) GetNote(uid int, noteID string) (*types.Note, error) {
 	note, err := s.repo.GetNote(noteID)
 	if err != nil {
@@ -52,7 +58,7 @@ func (s *service) DeleteNote(note_id string, uid int) error {
 	return s.repo.DeleteNote(note_id, uid)
 }
 
-func (s *service) CreateTg(tag *types.Tag) (*types.Tag, error) {
+func (s *service) CreateTag(tag *types.Tag) (*types.Tag, error) {
 	return s.repo.CreateTag(tag)
 }
 

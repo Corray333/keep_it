@@ -13,7 +13,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-type NoteStorage struct {
+type NoteRepository struct {
 	db *sqlx.DB
 }
 
@@ -23,15 +23,15 @@ var (
 )
 
 // New creates a new storage and tables
-func NewStorage(db *sqlx.DB, redis *redis.Client) *NoteStorage {
-	store := &NoteStorage{
+func NewStorage(db *sqlx.DB, redis *redis.Client) *NoteRepository {
+	store := &NoteRepository{
 		db: db,
 	}
 
 	return store
 }
 
-func (s *NoteStorage) CreateNote(note *types.Note) (string, error) {
+func (s *NoteRepository) CreateNote(note *types.Note) (string, error) {
 
 	// TODO: forbid if no access
 	tx, err := s.db.Beginx()
@@ -53,7 +53,7 @@ func (s *NoteStorage) CreateNote(note *types.Note) (string, error) {
 	return note_id, tx.Commit()
 }
 
-func (s *NoteStorage) GetNote(note_id string) (*types.Note, error) {
+func (s *NoteRepository) GetNote(note_id string) (*types.Note, error) {
 	// TODO: forbid if no access
 	note := &types.Note{}
 	rows := s.db.QueryRowx("SELECT * FROM notes WHERE note_id = $1", note_id)
@@ -79,7 +79,7 @@ func (s *NoteStorage) GetNote(note_id string) (*types.Note, error) {
 	return note, nil
 }
 
-func (s *NoteStorage) GetNotes(user_id int, offset int, filter map[string]interface{}) ([]*types.Note, bool, error) {
+func (s *NoteRepository) GetNotes(user_id int, offset int, filter map[string]interface{}) ([]*types.Note, bool, error) {
 	sqfilter := sq.Eq(filter)
 	sqfilter["user_id"] = user_id
 
@@ -127,7 +127,7 @@ func (s *NoteStorage) GetNotes(user_id int, offset int, filter map[string]interf
 	return notes, false, nil
 }
 
-func (s *NoteStorage) CheckNoteAccess(note_id string, user_id int) (bool, error) {
+func (s *NoteRepository) CheckNoteAccess(note_id string, user_id int) (bool, error) {
 	// TODO: forbid if no access
 	exists := false
 	err := s.db.QueryRowx("SELECT EXISTS(SELECT 1 FROM user_note_access WHERE note_id = $1 AND user_id = $2)", note_id, user_id).Scan(&exists)
@@ -139,7 +139,7 @@ func (s *NoteStorage) CheckNoteAccess(note_id string, user_id int) (bool, error)
 
 }
 
-func (s *NoteStorage) CreateTag(tag *types.Tag) (*types.Tag, error) {
+func (s *NoteRepository) CreateTag(tag *types.Tag) (*types.Tag, error) {
 	err := s.db.QueryRowx("INSERT INTO tags (text, color, owner) VALUES ($1, $2, $3) RETURNING tag_id", tag.Text, tag.Color, tag.Owner).Scan(&tag.ID)
 	if err != nil {
 		return nil, err
@@ -148,7 +148,7 @@ func (s *NoteStorage) CreateTag(tag *types.Tag) (*types.Tag, error) {
 	return tag, nil
 }
 
-func (s *NoteStorage) UpdateNote(note_id string, data map[string]interface{}) error {
+func (s *NoteRepository) UpdateNote(note_id string, data map[string]interface{}) error {
 
 	tx, err := s.db.Beginx()
 	if err != nil {
@@ -226,7 +226,7 @@ func (s *NoteStorage) UpdateNote(note_id string, data map[string]interface{}) er
 	return tx.Commit()
 }
 
-func (s *NoteStorage) DeleteNote(note_id string, uid int) error {
+func (s *NoteRepository) DeleteNote(note_id string, uid int) error {
 
 	res, err := s.db.Exec("DELETE FROM notes WHERE note_id = $1 AND creator = $2", note_id, uid)
 	if err != nil {

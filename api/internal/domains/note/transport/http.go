@@ -7,25 +7,26 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Corray333/keep_it/internal/domains/note/storage"
+	storage "github.com/Corray333/keep_it/internal/domains/note/repository"
 	"github.com/Corray333/keep_it/internal/domains/note/types"
 	"github.com/Corray333/keep_it/pkg/server/auth"
 	"github.com/go-chi/chi/v5"
 )
 
-type service interface{}
+type service interface {
+	GetNote(uid int, noteID string) (*types.Note, error)
+	ListNotes(uid int, offset int, filters map[string]interface{}) ([]*types.Note, bool, error)
+	CreateNote(note *types.Note) (string, error)
+	DeleteNote(note_id string, uid int) error
+	CreateTag(tag *types.Tag) (*types.Tag, error)
+	UpdateNote(note_id string, data map[string]interface{}) error
+}
 type server struct {
 	service service
 }
 
-type Storage interface {
-	GetNote(note_id string) (*types.Note, error)
-	CreateNote(note *types.Note) (string, error)
-	CheckNoteAccess(note_id string, user_id int) (bool, error)
-	CreateTag(tag *types.Tag) (*types.Tag, error)
-	UpdateNote(note_id string, data map[string]interface{}) error
-	GetNotes(user_id int, offset int, filter map[string]interface{}) ([]*types.Note, bool, error)
-	DeleteNote(note_id string, uid int) error
+func NewServer(service service) *server {
+	return &server{service}
 }
 
 type GetNoteResponse struct {
@@ -59,7 +60,7 @@ type GetNoteResponse struct {
 // @Failure 403 {string} string "Forbidden"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /api/notes/{note_id} [get]
-func GetNote(store Storage) http.HandlerFunc {
+func (s *server) GetNote() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		creds := r.Context().Value("creds").(auth.Credentials)
@@ -69,24 +70,12 @@ func GetNote(store Storage) http.HandlerFunc {
 			return
 		}
 
-		note, err := store.GetNote(chi.URLParam(r, "note_id"))
+		note, err := s.service.GetNote(creds.ID, chi.URLParam(r, "note_id"))
 		if err != nil {
+			// TODO: handle if user just has no access to the note
 			slog.Error("error while getting note: " + err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
-		}
-
-		if note.Creator != creds.ID {
-			allowed, err := store.CheckNoteAccess(note.ID, creds.ID)
-			if err != nil {
-				slog.Error("error while checking note access: " + err.Error())
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			if !allowed {
-				w.WriteHeader(http.StatusForbidden)
-				return
-			}
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -117,7 +106,7 @@ type ListNotesResponse struct {
 // @Failure 500 {string} string "Internal server error"
 // @Security ApiKeyAuth
 // @Router /api/notes [get]
-func ListNotes(store Storage) http.HandlerFunc {
+func (s *server) ListNotes() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		creds := r.Context().Value("creds").(auth.Credentials)
@@ -140,7 +129,7 @@ func ListNotes(store Storage) http.HandlerFunc {
 			offset = 0
 		}
 
-		notes, hasMore, err := store.GetNotes(creds.ID, offset, req)
+		notes, hasMore, err := s.service.ListNotes(creds.ID, offset, req)
 		if err != nil {
 			slog.Error("error while getting notes: " + err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -193,7 +182,7 @@ type NewNoteResponse struct {
 // @Failure 401 {string} string "Unauthorized"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /api/notes [post]
-func CreateNote(store Storage) http.HandlerFunc {
+func (s *server) CreateNote() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := &NewNoteRequest{}
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
@@ -253,7 +242,7 @@ func CreateNote(store Storage) http.HandlerFunc {
 
 		note.Creator = creds.ID
 
-		note_id, err := store.CreateNote(note)
+		note_id, err := s.service.CreateNote(note)
 		if err != nil {
 			slog.Error("error while creating note: " + err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -281,7 +270,7 @@ func CreateNote(store Storage) http.HandlerFunc {
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /api/notes/{note_id} [delete]
-func DeleteNote(store Storage) http.HandlerFunc {
+func (s *server) DeleteNote() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		creds := r.Context().Value("creds").(auth.Credentials)
 		if creds.ID == 0 {
@@ -290,7 +279,7 @@ func DeleteNote(store Storage) http.HandlerFunc {
 		}
 
 		note_id := chi.URLParam(r, "note_id")
-		if err := store.DeleteNote(note_id, creds.ID); err != nil {
+		if err := s.service.DeleteNote(note_id, creds.ID); err != nil {
 			if err == sql.ErrNoRows {
 				w.WriteHeader(http.StatusBadRequest)
 				return
@@ -319,7 +308,7 @@ type CreateTagRequest struct {
 // @Failure 401 {string} string "Unauthorized"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /api/tags [post]
-func CreateTag(store Storage) http.HandlerFunc {
+func (s *server) CreateTag() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tag := &types.Tag{}
 		if err := json.NewDecoder(r.Body).Decode(tag); err != nil {
@@ -336,7 +325,7 @@ func CreateTag(store Storage) http.HandlerFunc {
 
 		tag.Owner = creds.ID
 
-		tag, err := store.CreateTag(tag)
+		tag, err := s.service.CreateTag(tag)
 		if err != nil {
 			slog.Error("error while creating tag: " + err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
@@ -368,7 +357,7 @@ type UpdateNoteRequest map[string]interface{}
 // @Failure 404 {string} string "Not Found"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /api/notes/{note_id} [patch]
-func UpdateNote(store Storage) http.HandlerFunc {
+func (s *server) UpdateNote() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		note := UpdateNoteRequest{}
 		if err := json.NewDecoder(r.Body).Decode(&note); err != nil {
@@ -389,7 +378,7 @@ func UpdateNote(store Storage) http.HandlerFunc {
 			return
 		}
 
-		if err := store.UpdateNote(note_id, note); err != nil {
+		if err := s.service.UpdateNote(note_id, note); err != nil {
 			slog.Error("error while updating note: " + err.Error())
 			if err == storage.ErrorNoteDoesNotExist {
 				w.WriteHeader(http.StatusNotFound)
