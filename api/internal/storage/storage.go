@@ -1,9 +1,12 @@
 package storage
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
+	"github.com/go-redis/redis"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
@@ -16,11 +19,8 @@ var (
 )
 
 type Storage struct {
-	db *sqlx.DB
-}
-
-func (s *Storage) DB() *sqlx.DB {
-	return s.db
+	DB    *sqlx.DB
+	Redis *redis.Client
 }
 
 func New() (*Storage, error) {
@@ -41,7 +41,68 @@ func New() (*Storage, error) {
 		return nil, err
 	}
 
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("REDIS_ADDR"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+		DB:       0,
+	})
+
+	if res := redisClient.Ping(); res.Err() != nil {
+		panic(res.Err())
+	}
+
 	return &Storage{
-		db: db,
+		DB:    db,
+		Redis: redisClient,
 	}, nil
+}
+
+func (r *Storage) Begin(ctx context.Context) (context.Context, error) {
+	tx, err := r.DB.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return context.WithValue(ctx, TxKey{}, tx), nil
+}
+
+func (r *Storage) Commit(ctx context.Context) error {
+	tx, ok := ctx.Value(TxKey{}).(*sqlx.Tx)
+	if !ok {
+		return nil
+	}
+
+	return tx.Commit()
+}
+
+func (r *Storage) Rollback(ctx context.Context) error {
+	tx, ok := ctx.Value(TxKey{}).(*sqlx.Tx)
+	if !ok {
+		return nil
+	}
+
+	return tx.Rollback()
+}
+
+func (r *Storage) GetTx(ctx context.Context) (tx *sqlx.Tx, isNew bool, err error) {
+	txRaw := ctx.Value(TxKey{})
+	if txRaw != nil {
+		var ok bool
+		tx, ok = txRaw.(*sqlx.Tx)
+		if !ok {
+			slog.Error("invalid transaction type")
+			return nil, false, ErrInvalidTxType
+		}
+	}
+	if tx == nil {
+		tx, err = r.DB.BeginTxx(ctx, nil)
+		if err != nil {
+			slog.Error("failed to begin transaction: " + err.Error())
+			return nil, false, err
+		}
+
+		return tx, true, nil
+	}
+
+	return tx, false, nil
 }

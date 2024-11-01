@@ -14,6 +14,18 @@ services:
     command: make run
     depends_on:
       - db
+
+  authbot:
+    build: 
+      context: ./authbot
+      dockerfile: Dockerfile
+    volumes:
+      - ./authbot:/app
+      - .env:/app/.env
+    command: make run
+    depends_on:
+      - db
+      - redis
   
   app:
     image: node:latest
@@ -41,10 +53,18 @@ services:
     ports:
       - 80:80
     volumes:
-      - ./nginx/nginx-dev.conf:/etc/nginx/nginx.conf
+      - ./nginx/nginx-local.conf:/etc/nginx/nginx.conf
       - ./app/dist:/usr/share/nginx/html
       - ./files:/usr/share/nginx/files
       - ./static:/usr/share/nginx/static
     depends_on:
       - api
       - app
+
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
