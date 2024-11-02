@@ -3,7 +3,6 @@ package app
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -16,7 +15,6 @@ import (
 
 type Storage interface {
 	SetUserRequest(query *types.CodeQuery) error
-	UsernameIsAppropriate(username, tg_username string) (bool, error)
 }
 
 type App struct {
@@ -85,21 +83,7 @@ func (app *App) Run() {
 					continue
 				}
 
-				allowed, err := app.Storage.UsernameIsAppropriate(query.Username, update.FromChat().UserName)
-				if err != nil {
-					slog.Error("error while searching user: " + err.Error())
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, we have some internal problems😢 Please, try to log in later.")
-					bot.Send(msg)
-					continue
-				}
-
-				if !allowed {
-					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "This telegram account is already used by other user. Use your existing username or contact support🤙")
-					bot.Send(msg)
-					continue
-				}
-
-				query.TG = update.FromChat().UserName
+				query.TelegramID = update.FromChat().ID
 				query.Code = utils.GenerateVerificationCode()
 
 				if err := app.Storage.SetUserRequest(&query); err != nil {
@@ -114,36 +98,36 @@ func (app *App) Run() {
 				continue
 			}
 		} else if update.Message.ForwardFrom != nil || update.Message.ForwardFromChat != nil {
-			link := ""
-			if update.Message.ForwardFromChat.UserName != "" {
-				// For public groups/channels
-				link = fmt.Sprintf("https://t.me/%s/%d", update.Message.ForwardFromChat.UserName, update.Message.ForwardFromMessageID)
-			} else {
-				// For private groups/channels
-				link = fmt.Sprintf("https://t.me/c/%d/%d", update.Message.ForwardFromChat.ID, update.Message.ForwardFromMessageID)
-			}
+			// link := ""
+			// if update.Message.ForwardFromChat.UserName != "" {
+			// 	// For public groups/channels
+			// 	link = fmt.Sprintf("https://t.me/%s/%d", update.Message.ForwardFromChat.UserName, update.Message.ForwardFromMessageID)
+			// } else {
+			// 	// For private groups/channels
+			// 	link = fmt.Sprintf("https://t.me/c/%d/%d", update.Message.ForwardFromChat.ID, update.Message.ForwardFromMessageID)
+			// }
 
-			orig := types.Original{
-				Text: update.Message.ForwardFromChat.UserName,
-				Link: link,
-			}
-			marshalled, err := json.Marshal(orig)
-			if err != nil {
-				slog.Error("error while marshaling original message: " + err.Error())
-				continue
-			}
-			note := types.Note{
-				Original: string(marshalled),
-				Source:   "tg",
-				Type:     1,
-				Content:  update.Message.Text,
-			}
-			t, err := json.Marshal(note)
+			// orig := types.Original{
+			// 	Text: update.Message.ForwardFromChat.UserName,
+			// 	Link: link,
+			// }
+			// marshalled, err := json.Marshal(orig)
+			// if err != nil {
+			// 	slog.Error("error while marshaling original message: " + err.Error())
+			// 	continue
+			// }
+			// note := types.Note{
+			// 	Original: string(marshalled),
+			// 	Source:   "tg",
+			// 	Type:     1,
+			// 	Content:  update.Message.Text,
+			// }
+			// t, err := json.Marshal(note)
 
-			fmt.Println(err)
-			fmt.Println()
-			fmt.Println("Note: ", t)
-			fmt.Println()
+			// fmt.Println(err)
+			// fmt.Println()
+			// fmt.Println("Note: ", t)
+			// fmt.Println()
 		}
 	}
 }

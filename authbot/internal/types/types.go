@@ -5,10 +5,10 @@ import (
 )
 
 type CodeQuery struct {
-	Username string `json:"username"`
-	TG       string `json:"tg"`
-	Type     int64  `json:"type"`
-	Code     string `json:"code"`
+	Username   string `json:"username"`
+	TelegramID int64  `json:"tgID"`
+	Type       int64  `json:"type"`
+	Code       string `json:"code"`
 }
 
 type Note struct {

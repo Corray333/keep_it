@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -66,21 +65,4 @@ func (s *Storage) SetUserRequest(query *types.CodeQuery) error {
 		return res.Err()
 	}
 	return nil
-}
-
-type user struct {
-	Username string `db:"username"`
-}
-
-func (s *Storage) UsernameIsAppropriate(username, tg_username string) (bool, error) {
-	found := ""
-	row := s.DB.QueryRow("SELECT username FROM users WHERE tg_username = $1", tg_username)
-	if err := row.Scan(&found); err != nil {
-		if err == sql.ErrNoRows {
-			return true, nil
-		}
-		return false, err
-	}
-
-	return found == username, nil
 }

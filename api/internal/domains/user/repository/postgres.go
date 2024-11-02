@@ -19,8 +19,8 @@ func (s *UserRepository) InsertUser(ctx context.Context, user entities.User) (in
 	}
 
 	rows := tx.QueryRow(`
-		INSERT INTO users (username, email, tg_username, password, avatar, ref_code) VALUES ($1, $2, $3, $4, $5, $6) RETURNING user_id;
-	`, user.Username, user.Email, user.TelegramUsername, user.Password, "/images/avatars/default_avatar.png", user.RefCode)
+		INSERT INTO users (username, email, tg_id, password, avatar, ref_code) VALUES ($1, $2, $3, $4, $5, $6) RETURNING user_id;
+	`, user.Username, user.Email, user.TelegramID, user.Password, "/images/avatars/default_avatar.png", user.RefCode)
 
 	if err := rows.Scan(&user.ID); err != nil {
 		return -1, err
@@ -35,25 +35,25 @@ func (s *UserRepository) InsertUser(ctx context.Context, user entities.User) (in
 	return user.ID, nil
 }
 
-func (s *UserRepository) LoginUser(ctx context.Context, user entities.User) (userID int64, correctPassword string, err error) {
+func (s *UserRepository) LoginUser(ctx context.Context, user *entities.User) (fullUser *entities.User, err error) {
 
 	tx, isNew, err := s.GetTx(ctx)
 	if err != nil {
-		return -1, "", err
+		return nil, err
 	}
 	if isNew {
 		defer tx.Rollback()
 	}
 
-	rows := s.DB.QueryRow(`
-		SELECT user_id, password FROM users WHERE email = $1;
-	`, user.Email)
+	fullUser = &entities.User{}
 
-	if err := rows.Scan(&userID, &correctPassword); err != nil {
-		return -1, "", err
+	if err = s.DB.Get(fullUser, `
+		SELECT * FROM users WHERE username = $1;
+	`, user.Username); err != nil {
+		return nil, err
 	}
 
-	return user.ID, correctPassword, nil
+	return fullUser, nil
 }
 
 func (s *UserRepository) CreateRefreshToken(ctx context.Context, userID int64, refreshToken string, expiresAt int64) (err error) {

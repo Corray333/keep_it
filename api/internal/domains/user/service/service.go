@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"regexp"
 
 	"github.com/Corray333/keep_it/internal/domains/user/entities"
 	"github.com/Corray333/keep_it/pkg/server/auth"
@@ -23,7 +24,7 @@ type repository interface {
 
 	GetCodeRequest(ctx context.Context, username string) (*entities.CodeQuery, error)
 	InsertUser(ctx context.Context, user entities.User) (int64, error)
-	LoginUser(ctx context.Context, user entities.User) (userID int64, correctPassword string, err error)
+	LoginUser(ctx context.Context, user *entities.User) (fullUser *entities.User, err error)
 	CreateRefreshToken(ctx context.Context, userID int64, refreshToken string, expiresAt int64) (err error)
 
 	RenewTokens(ctx context.Context, userID int64, oldRefreshToken, newRefreshToken string, expiresAt int64) (err error)
@@ -49,6 +50,7 @@ var (
 	ErrWrongCodeRequestType  = errors.New("wrong type of code request: ")
 	ErrNotSignUpCode         = errors.Join(ErrWrongCodeRequestType, errors.New("has to be sign up (1)"))
 	ErrWrongPassword         = errors.New("wrong password")
+	ErrWrongPasswordFormat   = errors.New("password does not match the requirements")
 )
 
 func (s *UserService) SignUp(ctx context.Context, user entities.User, code string) (userID int64, accessToken string, refreshToken string, err error) {
@@ -66,7 +68,12 @@ func (s *UserService) SignUp(ctx context.Context, user entities.User, code strin
 		return 0, "", "", ErrWrongVerificationCode
 	}
 
-	user.TelegramUsername = query.TG
+	user.TelegramID = query.TelegramID
+
+	passwordRegex := regexp.MustCompile(`^[A-Za-z\d@$!%*?&]{8,}$`)
+	if !passwordRegex.MatchString(user.Password) {
+		return 0, "", "", ErrWrongPasswordFormat
+	}
 
 	passHash, err := auth.Hash(user.Password)
 	if err != nil {
@@ -114,54 +121,64 @@ func (s *UserService) SignUp(ctx context.Context, user entities.User, code strin
 	return userID, accessToken, refreshToken, err
 }
 
-func (s *UserService) LogIn(ctx context.Context, user entities.User) (userID int64, accessToken string, refreshToken string, err error) {
+func (s *UserService) LogIn(ctx context.Context, user *entities.User, code string) (fullUser *entities.User, accessToken string, refreshToken string, err error) {
+
+	query, err := s.repo.GetCodeRequest(ctx, user.Username)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("failed to get code request: %w", err)
+	}
+
+	if query.Type != CodeRequestTypeLogIn {
+		return nil, "", "", ErrNotSignUpCode
+	}
+
+	if query.Code != code {
+		return nil, "", "", ErrWrongVerificationCode
+	}
+
 	ctx, err = s.repo.Begin(ctx)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to begin transaction: " + err.Error())
+		return nil, "", "", fmt.Errorf("failed to begin transaction: " + err.Error())
 	}
 	defer s.repo.Rollback(ctx)
 
-	passHash, err := auth.Hash(user.Password)
+	fullUser, err = s.repo.LoginUser(ctx, user)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to hash password: " + err.Error())
-	}
-	user.Password = passHash
-
-	userID, correctPassword, err := s.repo.LoginUser(ctx, user)
-	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to login user: " + err.Error())
+		return nil, "", "", fmt.Errorf("failed to login user: " + err.Error())
 	}
 
-	if !auth.Verify(user.Password, correctPassword) {
-		return 0, "", "", ErrWrongPassword
+	if !auth.Verify(fullUser.Password, user.Password) {
+		return nil, "", "", ErrWrongPassword
 	}
 
-	refreshToken, err = auth.CreateToken(userID, auth.AccessTokenLifeTime)
+	fullUser.Password = ""
+
+	refreshToken, err = auth.CreateToken(fullUser.ID, auth.AccessTokenLifeTime)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to create access token: " + err.Error())
+		return nil, "", "", fmt.Errorf("failed to create access token: " + err.Error())
 	}
 	creds, err := auth.ExtractCredentials(refreshToken)
 	if err != nil {
 		slog.Error("failed to extract credentials: " + err.Error())
-		return 0, "", "", err
+		return nil, "", "", err
 	}
 
-	err = s.repo.CreateRefreshToken(ctx, userID, refreshToken, creds.Exp.Unix())
+	err = s.repo.CreateRefreshToken(ctx, fullUser.ID, refreshToken, creds.Exp.Unix())
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to set refresh token: " + err.Error())
+		return nil, "", "", fmt.Errorf("failed to set refresh token: " + err.Error())
 	}
 
 	err = s.repo.Commit(ctx)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to commit transaction: " + err.Error())
+		return nil, "", "", fmt.Errorf("failed to commit transaction: " + err.Error())
 	}
 
-	accessToken, err = auth.CreateToken(userID, auth.AccessTokenLifeTime)
+	accessToken, err = auth.CreateToken(fullUser.ID, auth.AccessTokenLifeTime)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to create access token: " + err.Error())
+		return nil, "", "", fmt.Errorf("failed to create access token: " + err.Error())
 	}
 
-	return userID, accessToken, refreshToken, err
+	return fullUser, accessToken, refreshToken, err
 }
 
 func (s *UserService) RenewTokens(ctx context.Context, userID int64, oldRefreshToken string) (accessToken, refreshToken string, err error) {
