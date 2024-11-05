@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/Corray333/keep_it/internal/config"
+	"github.com/Corray333/keep_it/internal/domains/note"
 	"github.com/Corray333/keep_it/internal/domains/user"
 	"github.com/Corray333/keep_it/internal/storage"
 	"github.com/Corray333/keep_it/pkg/server/logger"
@@ -34,7 +35,7 @@ func newRouter() *chi.Mux {
 
 	// TODO: get allowed origins, headers and methods from cfg
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost"},
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Set-Cookie", "Refresh", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Authorization"},
@@ -58,7 +59,7 @@ func New() *App {
 
 	// TODO: add timeouts
 	server := &http.Server{
-		Addr:    "0.0.0.0:" + viper.GetString("port"),
+		Addr:    "0.0.0.0:" + viper.GetString("server.port"),
 		Handler: router,
 	}
 
@@ -73,6 +74,9 @@ func New() *App {
 
 	userController := user.NewUserController(router, store)
 	app.AddController(userController)
+
+	noteController := note.NewNoteController(router, store)
+	app.AddController(noteController)
 
 	return app
 }

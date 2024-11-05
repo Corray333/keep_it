@@ -7,6 +7,21 @@ import (
 	"github.com/Corray333/keep_it/internal/domains/user/entities"
 )
 
+func (s *UserRepository) FindUserByUsernameOrEmail(ctx context.Context, checkStr string) (user *entities.User, err error) {
+	user = &entities.User{}
+
+	if err = s.DB.Get(user, `
+		SELECT * FROM users WHERE username = $1 OR email = $1;
+	`, checkStr); err != nil {
+		return nil, err
+	}
+
+	return &entities.User{
+		Username: user.Username,
+		Avatar:   user.Avatar,
+	}, nil
+}
+
 func (s *UserRepository) InsertUser(ctx context.Context, user entities.User) (int64, error) {
 
 	tx, isNew, err := s.GetTx(ctx)

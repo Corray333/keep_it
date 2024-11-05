@@ -1,0 +1,28 @@
+@import './base.css';
+
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Open Sans', sans-serif;
+  outline: none;
+}
+
+@layer components{
+  .text-accent{
+    font-family: 'Roboto Mono', 'Open Sans', sans-serif;
+  }
+
+  .btn-type-1{
+    @apply py-2 px-4 rounded-full w-full bg-invert-bg text-primary-bg 
+    duration-300 hover:bg-primary;
+  }
+
+  .text-active{
+    @apply  duration-300 hover:text-primary cursor-pointer;
+  }
+
+  input{
+    @apply py-2 px-4 rounded-full bg-secondary-bg
+  }
+}

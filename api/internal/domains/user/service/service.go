@@ -9,6 +9,7 @@ import (
 
 	"github.com/Corray333/keep_it/internal/domains/user/entities"
 	"github.com/Corray333/keep_it/pkg/server/auth"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -26,6 +27,8 @@ type repository interface {
 	InsertUser(ctx context.Context, user entities.User) (int64, error)
 	LoginUser(ctx context.Context, user *entities.User) (fullUser *entities.User, err error)
 	CreateRefreshToken(ctx context.Context, userID int64, refreshToken string, expiresAt int64) (err error)
+
+	FindUserByUsernameOrEmail(ctx context.Context, checkStr string) (user *entities.User, err error)
 
 	RenewTokens(ctx context.Context, userID int64, oldRefreshToken, newRefreshToken string, expiresAt int64) (err error)
 }
@@ -92,7 +95,7 @@ func (s *UserService) SignUp(ctx context.Context, user entities.User, code strin
 		return 0, "", "", fmt.Errorf("failed to insert user: " + err.Error())
 	}
 
-	refreshToken, err = auth.CreateToken(user.ID, auth.AccessTokenLifeTime)
+	refreshToken, err = auth.CreateToken(user.ID, viper.GetDuration("auth.refresh_token_lifetime"))
 	if err != nil {
 		return 0, "", "", fmt.Errorf("failed to create access token: " + err.Error())
 	}
@@ -113,7 +116,7 @@ func (s *UserService) SignUp(ctx context.Context, user entities.User, code strin
 		return 0, "", "", fmt.Errorf("failed to commit transaction: " + err.Error())
 	}
 
-	accessToken, err = auth.CreateToken(userID, auth.AccessTokenLifeTime)
+	accessToken, err = auth.CreateToken(userID, viper.GetDuration("auth.access_token_lifetime"))
 	if err != nil {
 		return 0, "", "", fmt.Errorf("failed to create access token: " + err.Error())
 	}
@@ -123,18 +126,18 @@ func (s *UserService) SignUp(ctx context.Context, user entities.User, code strin
 
 func (s *UserService) LogIn(ctx context.Context, user *entities.User, code string) (fullUser *entities.User, accessToken string, refreshToken string, err error) {
 
-	query, err := s.repo.GetCodeRequest(ctx, user.Username)
-	if err != nil {
-		return nil, "", "", fmt.Errorf("failed to get code request: %w", err)
-	}
+	// query, err := s.repo.GetCodeRequest(ctx, user.Username)
+	// if err != nil {
+	// 	return nil, "", "", fmt.Errorf("failed to get code request: %w", err)
+	// }
 
-	if query.Type != CodeRequestTypeLogIn {
-		return nil, "", "", ErrNotSignUpCode
-	}
+	// if query.Type != CodeRequestTypeLogIn {
+	// 	return nil, "", "", ErrNotSignUpCode
+	// }
 
-	if query.Code != code {
-		return nil, "", "", ErrWrongVerificationCode
-	}
+	// if query.Code != code {
+	// 	return nil, "", "", ErrWrongVerificationCode
+	// }
 
 	ctx, err = s.repo.Begin(ctx)
 	if err != nil {
@@ -153,7 +156,7 @@ func (s *UserService) LogIn(ctx context.Context, user *entities.User, code strin
 
 	fullUser.Password = ""
 
-	refreshToken, err = auth.CreateToken(fullUser.ID, auth.AccessTokenLifeTime)
+	refreshToken, err = auth.CreateToken(fullUser.ID, viper.GetDuration("auth.refresh_token_lifetime"))
 	if err != nil {
 		return nil, "", "", fmt.Errorf("failed to create access token: " + err.Error())
 	}
@@ -173,7 +176,7 @@ func (s *UserService) LogIn(ctx context.Context, user *entities.User, code strin
 		return nil, "", "", fmt.Errorf("failed to commit transaction: " + err.Error())
 	}
 
-	accessToken, err = auth.CreateToken(fullUser.ID, auth.AccessTokenLifeTime)
+	accessToken, err = auth.CreateToken(fullUser.ID, viper.GetDuration("auth.access_token_lifetime"))
 	if err != nil {
 		return nil, "", "", fmt.Errorf("failed to create access token: " + err.Error())
 	}
@@ -188,7 +191,7 @@ func (s *UserService) RenewTokens(ctx context.Context, userID int64, oldRefreshT
 	}
 	defer s.repo.Rollback(ctx)
 
-	refreshToken, err = auth.CreateToken(userID, auth.AccessTokenLifeTime)
+	refreshToken, err = auth.CreateToken(userID, viper.GetDuration("auth.refresh_token_lifetime"))
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create access token: " + err.Error())
 	}
@@ -208,10 +211,23 @@ func (s *UserService) RenewTokens(ctx context.Context, userID int64, oldRefreshT
 		return "", "", fmt.Errorf("failed to commit transaction: " + err.Error())
 	}
 
-	accessToken, err = auth.CreateToken(userID, auth.AccessTokenLifeTime)
+	accessToken, err = auth.CreateToken(userID, viper.GetDuration("auth.access_token_lifetime"))
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create access token: " + err.Error())
 	}
 
 	return accessToken, refreshToken, err
+}
+
+func (s *UserService) FindUserByUsernameOrEmail(ctx context.Context, checkStr string) (user *entities.User, err error) {
+	return s.repo.FindUserByUsernameOrEmail(ctx, checkStr)
+}
+
+func (s *UserService) CheckCode(ctx context.Context, testCode string, checkStr string) (correct bool, err error) {
+	codeReq, err := s.repo.GetCodeRequest(ctx, checkStr)
+	if err != nil {
+		return false, fmt.Errorf("failed to get code request: %w", err)
+	}
+
+	return codeReq.Code == testCode, nil
 }

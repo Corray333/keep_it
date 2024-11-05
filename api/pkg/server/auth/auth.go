@@ -8,13 +8,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/Corray333/keep_it/internal/helpers"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
-)
-
-const (
-	AccessTokenLifeTime  = time.Minute * 15
-	RefreshTokenLifeTime = time.Hour * 24 * 365
 )
 
 var secretKey []byte
@@ -35,7 +31,8 @@ func NewAuthMiddleware() func(next http.Handler) http.Handler {
 				slog.Error("Unauthorized: " + err.Error())
 				return
 			}
-			r = r.WithContext(context.WithValue(r.Context(), "creds", creds))
+
+			r = r.WithContext(context.WithValue(r.Context(), helpers.CtxUserIDKey, creds.ID))
 			next.ServeHTTP(w, r)
 		}
 		return http.HandlerFunc(fn)

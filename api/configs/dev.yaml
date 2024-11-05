@@ -1,1 +1,5 @@
-port: "3001"
+server:
+  port: "3001"
+auth:
+  access_token_lifetime: "1000h"
+  refresh_token_lifetime: "1000h"

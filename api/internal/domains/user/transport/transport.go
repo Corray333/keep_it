@@ -20,6 +20,8 @@ type service interface {
 	SignUp(ctx context.Context, user entities.User, code string) (userID int64, accessToken string, refreshToken string, err error)
 	LogIn(ctx context.Context, user *entities.User, code string) (fullUser *entities.User, accessToken string, refreshToken string, err error)
 	RenewTokens(ctx context.Context, userID int64, oldRefreshToken string) (accessToken, refreshToken string, err error)
+	FindUserByUsernameOrEmail(ctx context.Context, checkStr string) (user *entities.User, err error)
+	CheckCode(ctx context.Context, testCode string, checkStr string) (correct bool, err error)
 }
 
 func New(router *chi.Mux, service service) *UserTransport {
@@ -33,6 +35,9 @@ func (t *UserTransport) RegisterRoutes() {
 	t.router.Post("/api/users/sign-up", t.signUp)
 	t.router.Post("/api/users/log-in", t.logIn)
 	t.router.Post("/api/users/renew", t.renewTokens)
+	t.router.Post("/api/users/login-find", t.findUser)
+	t.router.Post("/api/users/check-code", t.checkCode)
+
 	t.router.Group(func(r chi.Router) {
 	})
 }
@@ -214,5 +219,62 @@ func (t *UserTransport) renewTokens(w http.ResponseWriter, r *http.Request) {
 
 	respondJSON(w, LogInResponse{
 		Authorization: accessToken,
+	})
+}
+
+type FindUserRequest struct {
+	CheckStr string `json:"checkStr"`
+}
+
+func (t *UserTransport) findUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req FindUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Error("failed to decode request: " + err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	user, err := t.service.FindUserByUsernameOrEmail(ctx, req.CheckStr)
+	if err != nil {
+		slog.Error("failed to find user: " + err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user.Password = ""
+
+	respondJSON(w, user)
+}
+
+type CheckCodeRequest struct {
+	TestCode string `json:"testCode"`
+	CheckStr string `json:"checkStr"`
+}
+
+type CheckCodeResponse struct {
+	Correct bool `json:"correct"`
+}
+
+func (t *UserTransport) checkCode(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req CheckCodeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Error("failed to decode request: " + err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	correct, err := t.service.CheckCode(ctx, req.TestCode, req.CheckStr)
+	if err != nil {
+		slog.Error("failed to check code: " + err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	respondJSON(w, CheckCodeResponse{
+		Correct: correct,
 	})
 }

@@ -2,10 +2,10 @@ package entities
 
 type User struct {
 	ID         int64  `json:"id,omitempty" db:"user_id"`
-	Username   string `json:"username" db:"username"`
-	TelegramID int64  `json:"tgID" db:"tg_id"`
-	Email      string `json:"email" db:"email"`
-	Avatar     string `json:"avatar" db:"avatar"`
+	Username   string `json:"username,omitempty" db:"username"`
+	TelegramID int64  `json:"tgID,omitempty" db:"tg_id"`
+	Email      string `json:"email,omitempty" db:"email"`
+	Avatar     string `json:"avatar,omitempty" db:"avatar"`
 	Password   string `json:"password,omitempty" db:"password"`
 	RefCode    string `json:"-" db:"ref_code"`
 }

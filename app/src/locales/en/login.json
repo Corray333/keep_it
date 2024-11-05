@@ -1,0 +1,32 @@
+{
+    "loginBtn":"Log in",
+    "continueBtn":"Continue",
+    "usernamePage":{
+        "title":"Hi ✌️ Who are you?",
+        "usernameOrEmail":"username or email",
+        "continue":"Continue",
+        "logInUsing":"or log in using "
+    },
+    "registerPage":{
+        "title":"Sorry, I don't know<br/>who you are😑",
+        "username":"username",
+        "password":"password",
+        "repeatPassword":"repeat password"
+    },
+    "loginPage":{
+        "title":"Welcome back✌️",
+        "password":"password"
+    },
+    "ref":{
+        "title":"You are invited by friend? Enter his referal code to get bonuses 😎",
+        "refCode":"referal code"
+    },
+    "verify":{
+        "title":"We need to verify<br/>your account 🔍",
+        "useEmail":"use email",
+        "useTg":"use telegram"
+    },
+    "verifyCode":{
+        "title":"Enter verification code ✅"
+    }
+}
