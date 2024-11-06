@@ -1,14 +1,14 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import type { Message } from '@/entities/message'
+import type { MessageI } from '@/entities/message'
 import { MessageType } from '@/entities/message'
 
 const showMessageTime = 3000
 
 export const useComponentsStore = defineStore('components', () => {
-  const messages = ref<Message[]>([])
+  const messages = ref<MessageI[]>([])
 
-  const newMessage = (message: Message) => {
+  const newMessage = (message: MessageI) => {
     messages.value.push(message)
     setTimeout(()=>{
       messages.value.shift()
@@ -25,5 +25,5 @@ export const useComponentsStore = defineStore('components', () => {
     })
   }
 
-  return { newMessage, newError }
+  return { messages, newMessage, newError }
 })

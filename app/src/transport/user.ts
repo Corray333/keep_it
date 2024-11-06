@@ -1,12 +1,5 @@
 import type { User } from "@/entities/user"
-import { useComponentsStore } from "@/stores/components"
-import axios from "axios"
-import { isAxiosError } from "axios"
-
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
-})
-
+import { api, logError } from "./main"
 
 interface SignUpResponse {
     authorization: string
@@ -14,7 +7,7 @@ interface SignUpResponse {
 }
 
 export class UserTransport {
-    FindUser = async (checkStr: string) : Promise<User|null>=>{
+    FindUserLogin = async (checkStr: string) : Promise<User|null>=>{
         try {
             const response = await api.post('/users/login-find', {
                 checkStr: checkStr
@@ -22,66 +15,48 @@ export class UserTransport {
         )
             return response.data
         } catch (error) {
-            const componentsStore = useComponentsStore()
-            console.log(error)
-            componentsStore.newError()
-
+            logError(error)
             return null
         }
     }
 
     CheckCode = async (checkStr: string, code: string) : Promise<boolean> =>{
         try {
-            const response = await api.post('/user/check-code', {
+            const response = await api.post('/auth/check-code', {
                 checkStr: checkStr,
                 code: code
             })
             return response.data
         } catch (error) {
-            const componentsStore = useComponentsStore()
-            console.log(error)
-            componentsStore.newError()
-
+            logError(error)
             return false
         }
     }
 
     SignUp = async (username: string, password: string, code: string) : Promise<SignUpResponse | null> =>{
         try {
-            const response = await api.post('/user/signup', {
+            const response = await api.post('/auth/signup', {
                 username: username,
                 password: password,
                 code: code
             })
             return response.data.authorization, response.data.user
         } catch (error) {
-            const componentsStore = useComponentsStore()
-            if (isAxiosError(error)) {
-                componentsStore.newError(error.message)
-            } else{
-                componentsStore.newError()
-            }
-            
+            logError(error)            
             return null
         }
     }
 
     LogIn = async (username: string, password: string, code: string) : Promise<SignUpResponse | null> =>{
         try {
-            const response = await api.post('/user/login', {
+            const response = await api.post('/auth/login', {
                 username: username,
                 password: password,
                 code: code
             })
             return response.data.authorization, response.data.user
         } catch (error) {
-            const componentsStore = useComponentsStore()
-            if (isAxiosError(error)) {
-                componentsStore.newError(error.message)
-            } else{
-                componentsStore.newError()
-            }
-            
+            logError(error)
             return null
         }
     }

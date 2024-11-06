@@ -32,11 +32,11 @@ func New(router *chi.Mux, service service) *UserTransport {
 }
 
 func (t *UserTransport) RegisterRoutes() {
-	t.router.Post("/api/users/sign-up", t.signUp)
-	t.router.Post("/api/users/log-in", t.logIn)
-	t.router.Post("/api/users/renew", t.renewTokens)
+	t.router.Post("/api/auth/signup", t.signUp)
+	t.router.Post("/api/auth/login", t.logIn)
+	t.router.Post("/api/auth/renew-tokens", t.renewTokens)
+	t.router.Post("/api/auth/check-code", t.checkCode)
 	t.router.Post("/api/users/login-find", t.findUser)
-	t.router.Post("/api/users/check-code", t.checkCode)
 
 	t.router.Group(func(r chi.Router) {
 	})

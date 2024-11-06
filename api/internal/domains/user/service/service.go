@@ -2,12 +2,13 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"regexp"
 
 	"github.com/Corray333/keep_it/internal/domains/user/entities"
+	"github.com/Corray333/keep_it/internal/helpers"
 	"github.com/Corray333/keep_it/pkg/server/auth"
 	"github.com/spf13/viper"
 )
@@ -49,22 +50,21 @@ func (s *UserService) Run() {
 
 // Errors
 var (
-	ErrWrongVerificationCode = errors.New("wrong verification code")
-	ErrWrongCodeRequestType  = errors.New("wrong type of code request: ")
-	ErrNotSignUpCode         = errors.Join(ErrWrongCodeRequestType, errors.New("has to be sign up (1)"))
-	ErrWrongPassword         = errors.New("wrong password")
-	ErrWrongPasswordFormat   = errors.New("password does not match the requirements")
+	ErrWrongVerificationCode = helpers.NewError(http.StatusUnauthorized, "wrong verification code")
+	ErrWrongCodeRequestType  = helpers.NewError(http.StatusBadRequest, "wrong code request type")
+	ErrWrongPassword         = helpers.NewError(http.StatusUnauthorized, "wrong password")
+	ErrWrongPasswordFormat   = helpers.NewError(http.StatusBadRequest, "wrong password format")
 )
 
 func (s *UserService) SignUp(ctx context.Context, user entities.User, code string) (userID int64, accessToken string, refreshToken string, err error) {
 
 	query, err := s.repo.GetCodeRequest(ctx, user.Username)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to get code request: %w", err)
+		return 0, "", "", err
 	}
 
 	if query.Type != CodeRequestTypeSignUp {
-		return 0, "", "", ErrNotSignUpCode
+		return 0, "", "", ErrWrongCodeRequestType
 	}
 
 	if query.Code != code {
@@ -126,18 +126,18 @@ func (s *UserService) SignUp(ctx context.Context, user entities.User, code strin
 
 func (s *UserService) LogIn(ctx context.Context, user *entities.User, code string) (fullUser *entities.User, accessToken string, refreshToken string, err error) {
 
-	// query, err := s.repo.GetCodeRequest(ctx, user.Username)
-	// if err != nil {
-	// 	return nil, "", "", fmt.Errorf("failed to get code request: %w", err)
-	// }
+	query, err := s.repo.GetCodeRequest(ctx, user.Username)
+	if err != nil {
+		return nil, "", "", err
+	}
 
-	// if query.Type != CodeRequestTypeLogIn {
-	// 	return nil, "", "", ErrNotSignUpCode
-	// }
+	if query.Type != CodeRequestTypeLogIn {
+		return nil, "", "", ErrWrongCodeRequestType
+	}
 
-	// if query.Code != code {
-	// 	return nil, "", "", ErrWrongVerificationCode
-	// }
+	if query.Code != code {
+		return nil, "", "", ErrWrongVerificationCode
+	}
 
 	ctx, err = s.repo.Begin(ctx)
 	if err != nil {

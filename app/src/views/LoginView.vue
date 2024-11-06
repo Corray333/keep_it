@@ -7,6 +7,7 @@ import GoogleIcon from '@/components/icons/google-icon.vue';
 import EmailIcon from '@/components/icons/email-icon.vue';
 import TelegramIcon from '@/components/icons/telegram-icon.vue';
 import { UserService } from '@/service/user';
+import { useComponentsStore } from '@/stores/components';
 
 enum Page {
     USERNAME,
@@ -21,13 +22,15 @@ enum CodeType {
     LOGIN,
 }
 
-const currentPage = ref<Page>(Page.ENTER_CODE)
+const currentPage = ref<Page>(Page.USERNAME)
 
 const username = ref<string>('')
 const email = ref<string>('')
 const password = ref<string>('')
 const repeatPassword = ref<string>('')
 const code = ref<string[]>(['', '', '', ''])
+
+const userExists = ref<boolean>(false)
 
 const { t, locale } = useI18n()
 
@@ -38,26 +41,29 @@ onBeforeMount(() => {
 const userService = new UserService()
 
 const checkUsername = async () => {
-    const user = await userService.checkUsernameOrEmail(username.value)
+    const user = await userService.findUserLogin(username.value)
     if (user != null) {
         username.value = user.username
         email.value = user.email
         currentPage.value = Page.LOGIN
+        userExists.value = true
     } else {
         currentPage.value = Page.REGISTER
+        userExists.value = false
     }
 }
 
 const sendCodeInTelegram = () => {
     const request = {
         username: username.value,
-        type: CodeType.SIGNUP
+        type: userExists.value ? CodeType.LOGIN : CodeType.SIGNUP
     }
     const jsonString = JSON.stringify(request)
 
     const base64Encoded = btoa(jsonString)
 
     window.open(`https://t.me/keep_it_authorization_bot?start=${base64Encoded}`, "_blank")?.focus()
+    currentPage.value = Page.ENTER_CODE
 }
 
 const checkCode = async (event: Event, i: number) => {
@@ -67,9 +73,13 @@ const checkCode = async (event: Event, i: number) => {
     }
 
     if (i < code.value.length - 1) {
-        event?.target?.nextElementSibling?.focus()
+        ((event?.target as HTMLElement)?.nextElementSibling as HTMLElement)?.focus()
     } else {
-        userService.checkCode(username.value, code.value.join(''))
+        if (userExists.value){
+            userService.logIn(username.value, password.value, code.value.join(''))
+        } else {
+            userService.signUp(username.value, password.value, code.value.join(''))
+        }
         return
     }
 
@@ -81,6 +91,8 @@ const checkCode = async (event: Event, i: number) => {
 
 
 }
+
+const componentsStore = useComponentsStore()
 
 
 </script>
@@ -96,7 +108,7 @@ const checkCode = async (event: Event, i: number) => {
                     <button @click="checkUsername" class="btn-type-1">{{ t('continueBtn') }}</button>
                     <span class="flex items-center gap-2">
                         <p>{{ t('usernamePage.logInUsing') }}</p>
-                        <GoogleIcon class=" text-xl text-active" />
+                        <GoogleIcon @click="componentsStore.newError()" class=" text-xl text-active" />
                     </span>
                 </div>
             </div>
