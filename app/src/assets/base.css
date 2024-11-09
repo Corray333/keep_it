@@ -9,4 +9,16 @@
   --half-dark: #333333;
   --primary: #FFC555;
   --light: #F9F9F9;
+  --light-50: #8a8a8a;
+
+  --correct: #5ddf5d;
+  --error: #ff5d5d;
+  --warning: #ffcc00;
+  --info: #5d5dff;
+
+  --primary-bg: var(--dark);
+  --secondary-bg: var(--half-dark);
+  --invert-bg: var(--light);
+  --invert-bg-50: var(--light-50);
+  --primary: var(--primary);
 }

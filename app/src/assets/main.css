@@ -25,4 +25,40 @@
   input{
     @apply py-2 px-4 rounded-full bg-secondary-bg
   }
+
+  a{
+    @apply relative;
+  }
+
+  a::before{
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--invert-bg);
+    transition: 0.3s;
+  }
+
+  a:hover::before{
+    width: 100%;
+  }
+}
+
+.card-stack{
+  @apply flex flex-col gap-4;
+}
+
+.card-stack>*{
+  @apply absolute duration-300 top-0 right-0;
+  transform: translateY(30px) scale(0.9);
+}
+
+.card-stack>:nth-last-child(2) {
+  transform: translateY(15px) scale(0.95);
+}
+
+.card-stack>:nth-last-child(1) {
+  transform: translateY(0px) scale(1);
 }

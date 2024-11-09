@@ -9,7 +9,7 @@ const componentsStore = useComponentsStore()
 
 <template>
     <Transition name="delay">
-        <section v-show="componentsStore.messages.length > 0" class="msg-stack">
+        <section v-show="componentsStore.messages.length > 0" class="msg-stack card-stack">
             <TransitionGroup name="slide-down">
                 <MessageComponent v-for="(msg, i) of componentsStore.messages" :key="i" :message="msg" />
             </TransitionGroup>
@@ -41,19 +41,7 @@ const componentsStore = useComponentsStore()
 }
 
 .msg-stack{
-    @apply flex flex-col gap-4 mr-4 mt-4 w-full max-w-96;
-}
-.msg-stack>*{
-    @apply absolute duration-300 top-0 right-0;
-    transform: translateY(30px) scale(0.9);
-}
-
-.msg-stack>:nth-last-child(2) {
-    transform: translateY(15px) scale(0.95);
-}
-
-.msg-stack>:nth-last-child(1) {
-    transform: translateY(0px) scale(1);
+    @apply mr-4 mt-4 w-full max-w-96;
 }
 
 </style>

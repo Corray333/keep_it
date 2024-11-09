@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import MessageStack from './components/MessageStack.vue';
+import MessageStack from './components/MessageStack.vue'
 
 
 </script>

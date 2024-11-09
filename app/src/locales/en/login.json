@@ -28,5 +28,16 @@
     },
     "verifyCode":{
         "title":"Enter verification code ✅"
+    },
+    "verifyTelegram":{
+        "scanQR":"Scan QR code",
+        "useLink":"or use this link"
+    },
+    "passwordReqs":{
+        "lowercase":"At least one lowercase letter",
+        "uppercase":"At least one uppercase letter",
+        "digit":"At least one digit",
+        "minLength":"At least 8 characters",
+        "maxLength":"No more than 32 characters"
     }
 }

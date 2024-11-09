@@ -10,5 +10,9 @@ export const useAccountStore = defineStore('account', () => {
     authorization.value = token
   }
 
-  return { authorization, setAuthorization, user }
+  const setUser = (newUser: User) =>{
+    user.value = newUser
+  }
+
+  return { authorization, setAuthorization, user, setUser }
 })

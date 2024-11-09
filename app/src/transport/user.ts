@@ -7,7 +7,7 @@ interface SignUpResponse {
 }
 
 export class UserTransport {
-    FindUserLogin = async (checkStr: string) : Promise<User|null>=>{
+    findUserLogin = async (checkStr: string) : Promise<User|null>=>{
         try {
             const response = await api.post('/users/login-find', {
                 checkStr: checkStr
@@ -20,44 +20,50 @@ export class UserTransport {
         }
     }
 
-    CheckCode = async (checkStr: string, code: string) : Promise<boolean> =>{
+    signUp = async (username: string, password: string, code: string) : Promise<SignUpResponse | null> =>{
         try {
-            const response = await api.post('/auth/check-code', {
-                checkStr: checkStr,
-                code: code
-            })
-            return response.data
-        } catch (error) {
-            logError(error)
-            return false
-        }
-    }
-
-    SignUp = async (username: string, password: string, code: string) : Promise<SignUpResponse | null> =>{
-        try {
-            const response = await api.post('/auth/signup', {
+            const {data} = await api.post('/auth/signup', {
                 username: username,
                 password: password,
                 code: code
             })
-            return response.data.authorization, response.data.user
+            return {
+                authorization: data.authorization,
+                user: data.user
+            }
         } catch (error) {
             logError(error)            
             return null
         }
     }
 
-    LogIn = async (username: string, password: string, code: string) : Promise<SignUpResponse | null> =>{
+    logIn = async (username: string, password: string, code: string) : Promise<SignUpResponse | null> =>{
         try {
-            const response = await api.post('/auth/login', {
+            const {data} = await api.post('/auth/login', {
                 username: username,
                 password: password,
                 code: code
             })
-            return response.data.authorization, response.data.user
+            return {
+                authorization: data.authorization,
+                user: data.user
+            }
         } catch (error) {
             logError(error)
             return null
+        }
+    }
+
+    codeExists = async (username: string, syn: number) : Promise<boolean> =>{
+        try {
+            const response = await api.post('/auth/code-exists', {
+                username: username,
+                syn: syn
+            })
+            return response.data.exists
+        } catch (error) {
+            logError(error)
+            return false
         }
     }
 }

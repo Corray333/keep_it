@@ -37,8 +37,8 @@ api.interceptors.response.use(
                 const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/auth/renew-tokens`, {}, {
                     withCredentials: true
                 })
-                useAccountStore().setAuthorization(data.accessToken)
-                originalRequest.headers['Authorization'] = `Bearer ${data.accessToken}`
+                useAccountStore().setAuthorization(data.authorization)
+                originalRequest.headers['Authorization'] = `${data.authorization}`
                 return api(originalRequest)
             } catch {
                 const router = useRouter()
@@ -51,8 +51,9 @@ api.interceptors.response.use(
 
 const logError = (error: unknown)=>{
     const componentsStore = useComponentsStore()
+    console.log(error)
     if (isAxiosError(error)){
-        componentsStore.newError(error.message)
+        componentsStore.newError(error.response?.data)
     } else {
         componentsStore.newError()
     }

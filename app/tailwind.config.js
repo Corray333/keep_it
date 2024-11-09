@@ -5,10 +5,11 @@ export default {
   theme: {
     extend: {
       colors:{
-        'primary-bg':'var(--dark)',
-        'secondary-bg':'var(--half-dark)',
+        'primary-bg':'var(--primary-bg)',
+        'secondary-bg':'var(--secondary-bg)',
         'primary':'var(--primary)',
-        'invert-bg':'var(--light)',
+        'invert-bg':'var(--invert-bg)',
+        'invert-bg-50':'var(--invert-bg-50)'
       }
     },
   },
