@@ -1,10 +1,13 @@
 <script lang="ts" setup>
-import type { Note } from '@/entities/note'
-import { baseURL } from '@/helpers/data'
+import type { Checkbox, H1, Image, Note } from '@/entities/note';
 import NoteIcon from '../NoteIcon.vue';
+import ContentCheckbox from './content/ContentCheckbox.vue';
+import ContentH1 from './content/ContentH1.vue';
+import ContentImage from './content/ContentImage.vue';
+import TagsBlock from './TagsBlock.vue';
 
 
-const props = defineProps<{
+defineProps<{
     note: Note
 }>()
 
@@ -13,14 +16,23 @@ const props = defineProps<{
 <template>
     <div class="note-card">
         <div class="note-card-header">
-            <NoteIcon :icon="note.icon.data" /><p>{{ note.title }}</p>
+            <div class="note-card-header-label">
+                <NoteIcon :icon="note.icon.data" />
+                <a :href="note.original" target="_blank"><p>{{ note.title }}</p></a>
+            </div>
+
+            <TagsBlock :tags="note.tags" :noteID="note.id" />
         </div>
 
         <div class="note-card-body">
-            <div class="note-card-body-cover"></div>
+            <img class="note-card-body-cover" :src="note.cover">
 
             <div class="note-card-body-content">
-                <p v-for="(content_el, i) of note.content" :key="`el${i}`">{{ content_el }}</p>
+                <p v-for="(content_el, i) of note.content" :key="`el${i}`">
+                    <ContentH1 v-if="content_el.type == 'h1'" :element="(content_el as H1)" />
+                    <ContentCheckbox v-if="content_el.type == 'checkbox'" :element="(content_el as Checkbox)" />
+                    <ContentImage v-if="content_el.type == 'img'" :element="(content_el as Image)"/>
+                </p>
             </div>
         </div>
     </div>
@@ -34,11 +46,21 @@ const props = defineProps<{
 }
 
 .note-card-header{
-    @apply p-2 border-b-2 border-invert-bg-50 flex gap-2 items-center;
+    @apply p-2 border-b-2 border-invert-bg-50 flex items-center justify-between;
 }
 
 .note-card-body{
-    @apply p-2 flex;
+    @apply p-4 flex h-36 overflow-hidden gap-2 text-sm;
 }
+
+.note-card-body-cover{
+    @apply w-28 h-28 object-cover rounded-lg;
+}
+
+.note-card-header-label{
+    @apply flex gap-2
+}
+
+
 
 </style>

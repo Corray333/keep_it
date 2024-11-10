@@ -5,7 +5,7 @@ export interface Note {
     title: string
     source: string
     original: string
-    content: unknown[]
+    content: ContentElement[]
     cover: string
     createdAt: number
     copiedAt: number
@@ -15,14 +15,50 @@ export interface Note {
     icon: Icon
 }
 
+export interface ContentElement {
+    type: string
+}
+
 export interface Tag {
-    id: number
     text: string
     color: string
-    owner: number
 }
 
 export interface Icon {
     type: string
     data: string
+}
+
+export interface RichText{
+    plain_text: string
+    meta: TextMeta[] 
+}
+
+export interface H1{
+    type: string
+    rich_text: RichText
+}
+
+export interface Checkbox{
+    type: string
+    checked: boolean
+    rich_text: RichText
+}
+
+export interface Image{
+    type: string
+    src: string
+    caption: string
+    width: number
+    align: string
+}
+export interface TextMeta{
+    offset: number
+    length: number
+    link: string
+    color: string
+    weight: string
+    italic: boolean
+    underline: boolean
+    cross_out: boolean
 }

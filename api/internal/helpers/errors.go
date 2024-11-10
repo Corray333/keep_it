@@ -1,25 +1,28 @@
 package helpers
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // CustomError struct that implements the error interface
 type CustomError struct {
-	Message string
-	Code    int
+	Err  error
+	Code int
 }
 
 // Error method to implement the error interface
 func (e *CustomError) Error() string {
-	return fmt.Sprintf("Error %d: %s", e.Code, e.Message)
+	return fmt.Sprintf("Error %d: %s", e.Code, e.Err.Error())
 }
 
-func NewError(code int, message string) *CustomError {
+func NewError(code int, err error) *CustomError {
 	return &CustomError{
-		Message: message,
-		Code:    code,
+		Err:  err,
+		Code: code,
 	}
 }
 
 var (
-	ErrInternal = NewError(500, "internal error")
+	ErrInternal = NewError(500, errors.New("internal error"))
 )

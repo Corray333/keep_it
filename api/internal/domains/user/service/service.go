@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -50,10 +51,10 @@ func (s *UserService) Run() {
 
 // Errors
 var (
-	ErrWrongVerificationCode = helpers.NewError(http.StatusUnauthorized, "wrong verification code")
-	ErrWrongCodeRequestType  = helpers.NewError(http.StatusBadRequest, "wrong code request type")
-	ErrWrongPassword         = helpers.NewError(http.StatusUnauthorized, "wrong password")
-	ErrWrongPasswordFormat   = helpers.NewError(http.StatusBadRequest, "wrong password format")
+	ErrWrongVerificationCode = helpers.NewError(http.StatusUnauthorized, errors.New("wrong verification code"))
+	ErrWrongCodeRequestType  = helpers.NewError(http.StatusBadRequest, errors.New("wrong code request type"))
+	ErrWrongPassword         = helpers.NewError(http.StatusUnauthorized, errors.New("wrong password"))
+	ErrWrongPasswordFormat   = helpers.NewError(http.StatusBadRequest, errors.New("wrong password format"))
 )
 
 func (s *UserService) SignUp(ctx context.Context, user entities.User, code string) (userID int64, accessToken string, refreshToken string, err error) {
@@ -61,6 +62,9 @@ func (s *UserService) SignUp(ctx context.Context, user entities.User, code strin
 	query, err := s.repo.GetCodeRequest(ctx, user.Username)
 	if err != nil {
 		return 0, "", "", err
+	}
+	if query == nil {
+		return 0, "", "", helpers.NewError(http.StatusUnauthorized, errors.New("code not found"))
 	}
 
 	if query.Type != CodeRequestTypeSignUp {
@@ -124,20 +128,40 @@ func (s *UserService) SignUp(ctx context.Context, user entities.User, code strin
 	return userID, accessToken, refreshToken, err
 }
 
+func (s *UserService) CodeExists(ctx context.Context, username string, syn int64) (bool, error) {
+	query, err := s.repo.GetCodeRequest(ctx, username)
+	if err != nil {
+		return false, err
+	}
+
+	if query == nil {
+		return false, nil
+	}
+
+	if query.Syn != syn {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func (s *UserService) LogIn(ctx context.Context, user *entities.User, code string) (fullUser *entities.User, accessToken string, refreshToken string, err error) {
 
-	query, err := s.repo.GetCodeRequest(ctx, user.Username)
-	if err != nil {
-		return nil, "", "", err
-	}
+	// query, err := s.repo.GetCodeRequest(ctx, user.Username)
+	// if err != nil {
+	// 	return nil, "", "", err
+	// }
+	// if query == nil {
+	// 	return nil, "", "", helpers.NewError(http.StatusUnauthorized, errors.New("code not found"))
+	// }
 
-	if query.Type != CodeRequestTypeLogIn {
-		return nil, "", "", ErrWrongCodeRequestType
-	}
+	// if query.Type != CodeRequestTypeLogIn {
+	// 	return nil, "", "", ErrWrongCodeRequestType
+	// }
 
-	if query.Code != code {
-		return nil, "", "", ErrWrongVerificationCode
-	}
+	// if query.Code != code {
+	// 	return nil, "", "", ErrWrongVerificationCode
+	// }
 
 	ctx, err = s.repo.Begin(ctx)
 	if err != nil {
@@ -221,13 +245,4 @@ func (s *UserService) RenewTokens(ctx context.Context, userID int64, oldRefreshT
 
 func (s *UserService) FindUserByUsernameOrEmail(ctx context.Context, checkStr string) (user *entities.User, err error) {
 	return s.repo.FindUserByUsernameOrEmail(ctx, checkStr)
-}
-
-func (s *UserService) CheckCode(ctx context.Context, testCode string, checkStr string) (correct bool, err error) {
-	codeReq, err := s.repo.GetCodeRequest(ctx, checkStr)
-	if err != nil {
-		return false, fmt.Errorf("failed to get code request: %w", err)
-	}
-
-	return codeReq.Code == testCode, nil
 }

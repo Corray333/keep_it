@@ -43,7 +43,7 @@ onBeforeMount(()=>{
 }
 
 .home-body{
-    @apply grid grid-cols-3 w-full
+    @apply grid grid-cols-4 w-full
 }
 
 .notes{

@@ -9,6 +9,7 @@ type CodeQuery struct {
 	TelegramID int64  `json:"tgID"`
 	Type       int64  `json:"type"`
 	Code       string `json:"code"`
+	Syn        int64  `json:"syn"`
 }
 
 type Note struct {

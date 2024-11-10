@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import type { MessageI } from '@/entities/message'
 import { MessageType } from '@/entities/message'
 
-const showMessageTime = 3000
+const showMessageTime = 5000
 
 export const useComponentsStore = defineStore('components', () => {
   const messages = ref<MessageI[]>([])

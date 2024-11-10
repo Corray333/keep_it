@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/Corray333/keep_it/internal/domains/note/entities"
@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ErrNoAccess = helpers.NewError(http.StatusForbidden, "no access")
+	ErrNoAccess = helpers.NewError(http.StatusForbidden, errors.New("no access"))
 )
 
 type repository interface {
@@ -20,6 +20,13 @@ type repository interface {
 
 	CreateNote(ctx context.Context, note *entities.Note) (noteID string, err error)
 	GetNote(ctx context.Context, noteID string) (*entities.Note, error)
+	GetNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error)
+
+	GetTags(ctx context.Context, userID int64) ([]entities.Tag, error)
+	CreateTag(ctx context.Context, tag *entities.Tag) error
+	DeleteTag(ctx context.Context, tag *entities.Tag) error
+	RemoveTagFromNote(ctx context.Context, tag *entities.Tag, noteID string) error
+	AddTagToNote(ctx context.Context, tag *entities.Tag, noteID string) error
 }
 
 type NoteService struct {
@@ -57,20 +64,6 @@ func (c *NoteService) CreateNote(ctx context.Context, userID int64, note entitie
 
 	note.CreatorID = userID
 
-	contentRaw, err := json.Marshal(note.Content)
-	if err != nil {
-		return "", err
-	}
-
-	note.ContentRaw = string(contentRaw)
-
-	iconRaw, err := json.Marshal(note.Icon)
-	if err != nil {
-		return "", err
-	}
-
-	note.IconRaw = iconRaw
-
 	noteID, err = c.repo.CreateNote(ctx, &note)
 	if err != nil {
 		_ = c.repo.Rollback(ctx)
@@ -82,4 +75,51 @@ func (c *NoteService) CreateNote(ctx context.Context, userID int64, note entitie
 	}
 
 	return noteID, nil
+}
+
+func (c *NoteService) GetNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error) {
+	return c.repo.GetNotes(ctx, userID, offset)
+}
+
+func (c *NoteService) GetNewNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error) {
+	return c.repo.GetNotes(ctx, userID, offset)
+}
+
+func (c *NoteService) CreateTag(ctx context.Context, tag *entities.Tag) error {
+	// TODO: add limit in 128 tags
+	return c.repo.CreateTag(ctx, tag)
+}
+
+func (c *NoteService) DeleteTag(ctx context.Context, tag *entities.Tag) error {
+	return c.repo.DeleteTag(ctx, tag)
+}
+
+func (c *NoteService) RemoveTagFromNote(ctx context.Context, tag *entities.Tag, noteID string) error {
+	return c.repo.RemoveTagFromNote(ctx, tag, noteID)
+}
+
+func (s *NoteService) AddTagToNote(ctx context.Context, tag *entities.Tag, noteID string, isNew bool) error {
+	ctx, err := s.repo.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer s.repo.Rollback(ctx)
+
+	if isNew {
+		if err := s.repo.CreateTag(ctx, tag); err != nil {
+			return err
+		}
+	}
+
+	// TODO: add limit in 5 tags
+
+	if err := s.repo.AddTagToNote(ctx, tag, noteID); err != nil {
+		return err
+	}
+
+	return s.repo.Commit(ctx)
+}
+
+func (c *NoteService) GetTags(ctx context.Context, userID int64) ([]entities.Tag, error) {
+	return c.repo.GetTags(ctx, userID)
 }

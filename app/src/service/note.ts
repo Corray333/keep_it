@@ -1,9 +1,29 @@
-import type { Note } from "@/entities/note"
+import type { Note, Tag } from "@/entities/note"
 import { NoteTransport } from "@/transport/note"
 
 export class NoteService {
     noteTransport = new NoteTransport()
     getNotes = async (offset: number) : Promise<Note[]>=>{
         return await this.noteTransport.getNotes(offset)
+    }
+
+    createTag = async (text: string, color: string) : Promise<boolean> =>{
+        return await this.noteTransport.createTag(text, color)
+    }
+
+    deleteTag = async (text: string) : Promise<boolean> =>{
+        return await this.noteTransport.deleteTag(text)
+    }
+
+    getTags = async () : Promise<Tag[]> =>{
+        return await this.noteTransport.getTags()
+    }
+
+    removeTagFromNote = async (noteId: string, tagText: string) : Promise<boolean> =>{
+        return await this.noteTransport.removeTagFromNote(noteId, tagText)
+    }
+
+    addTagToNote = async (noteId: string, tagText: string, color: string, isNew: boolean) : Promise<boolean> =>{
+        return await this.noteTransport.addTagToNote(noteId, tagText, color, isNew)
     }
 }

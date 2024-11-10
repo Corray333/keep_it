@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS notes(
     note_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    creator_id BIGINT NOT NULL REFERENCES users,
+    creator_id BIGINT NOT NULL REFERENCES users ON DELETE CASCADE,
     title VARCHAR(256) NOT NULL DEFAULT '',
     source VARCHAR(16) NOT NULL DEFAULT 'keep_it',
     original TEXT NOT NULL DEFAULT '',
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS notes(
     created_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()),
     copied_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()),
     type SMALLINT NOT NULL DEFAULT 1,
-    content TEXT NOT NULL DEFAULT '[]',
+    content JSON NOT NULL DEFAULT '[]',
     cover TEXT NOT NULL DEFAULT '',
     checked BOOLEAN NOT NULL DEFAULT false,
     category_id UUID,

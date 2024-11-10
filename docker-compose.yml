@@ -14,6 +14,7 @@ services:
     command: make run
     depends_on:
       - db
+      - redis
 
   authbot:
     build: 
