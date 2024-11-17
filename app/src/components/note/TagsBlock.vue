@@ -77,13 +77,13 @@ const closeAddTagMenu = ()=>{
                 <div class="tag-label" :style="{backgroundColor:tag.color}"><p>{{tag.text}}</p></div>
             </span>
         </div>
-        <span class="tag new-tag bg-secondary-bg" @click="showAddTagMenu = true" v-click-outside="closeAddTagMenu">
+        <span class="tag new-tag bg-secondary-bg" @click.stop="showAddTagMenu = true" v-click-outside="closeAddTagMenu">
             <PlusIcon/>
 
             <div class="add-tag-menu" :class="{hidden: !showAddTagMenu}">
                 <input type="text" placeholder="Tag" v-model="newTag" @keyup.enter="createNewTag">
                 <div class="add-tag-menu-list">
-                    <span class="select-tag" v-for="(tag, i) of tags" :key="i" :style="{backgroundColor: tag.color}"><p>{{ tag.text }}</p><CloseIcon @click="removeTagFromNote(tag)" /></span>
+                    <span class="select-tag" v-for="(tag, i) of tags" :key="i" @click="removeTagFromNote(tag)" :style="{backgroundColor: tag.color}"><p>{{ tag.text }}</p><CloseIcon /></span>
                     <span class="select-tag" v-for="(tag, i) of filteredTags" :key="i" @click="addTagToNote(tag)" :style="{backgroundColor: tag.color}"><p>{{ tag.text }}</p></span>
                 </div>
             </div>
@@ -112,7 +112,7 @@ const closeAddTagMenu = ()=>{
 }
 
 .add-tag-menu{
-    @apply absolute flex flex-col gap-2 p-2 bg-primary-bg rounded-2xl shadow-lg w-64 left-full ml-2 duration-300 will-change-transform origin-top-left;
+    @apply absolute z-20 flex flex-col gap-2 p-2 bg-primary-bg rounded-2xl shadow-lg w-64 right-full ml-2 duration-300 will-change-transform origin-top-right;
 }
 
 .add-tag-menu>*{
@@ -123,12 +123,7 @@ const closeAddTagMenu = ()=>{
     @apply flex gap-2 flex-wrap
 }
 
-.select-tag{
-    @apply w-fit px-2 rounded-full flex items-center;
-}
-.select-tag>*{
-    @apply invert
-}
+
 
 .add-tag-menu.hidden{
     @apply scale-0

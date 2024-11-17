@@ -44,6 +44,29 @@
   a:hover::before{
     width: 100%;
   }
+
+  h1{
+    @apply text-2xl font-bold;
+  }
+
+  h2{
+    @apply text-xl font-bold;
+  }
+  
+  h3{
+    @apply text-lg font-bold;
+  }
+
+  .tag{
+    @apply w-4 h-4 rounded-full relative flex justify-center cursor-pointer duration-300 hover:scale-125;
+  }
+  .select-tag{
+    @apply w-fit px-2 rounded-full flex items-center cursor-pointer;
+  }
+  .select-tag>*{
+    mix-blend-mode: color-dodge;
+    color: white;
+  }
 }
 
 .card-stack{

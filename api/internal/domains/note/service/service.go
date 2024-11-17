@@ -20,7 +20,7 @@ type repository interface {
 
 	CreateNote(ctx context.Context, note *entities.Note) (noteID string, err error)
 	GetNote(ctx context.Context, noteID string) (*entities.Note, error)
-	GetNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error)
+	GetNotes(ctx context.Context, userID int64, offset int, filters []helpers.Filter) ([]entities.Note, error)
 
 	GetTags(ctx context.Context, userID int64) ([]entities.Tag, error)
 	CreateTag(ctx context.Context, tag *entities.Tag) error
@@ -81,8 +81,22 @@ func (c *NoteService) CreateNote(ctx context.Context, userID int64, note entitie
 	return noteID, nil
 }
 
-func (c *NoteService) GetNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error) {
-	notes, err := c.repo.GetNotes(ctx, userID, offset)
+func (c *NoteService) GetNotes(ctx context.Context, userID int64, offset int, filters map[string][]string) ([]entities.Note, error) {
+
+	newFilters := []helpers.Filter{}
+
+	for key, values := range filters {
+		switch key {
+		case "tag":
+			newFilters = append(newFilters, helpers.Filter{
+				Field:     helpers.FilterKeyTag,
+				Operation: "IN",
+				Value:     values,
+			})
+		}
+	}
+
+	notes, err := c.repo.GetNotes(ctx, userID, offset, newFilters)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +111,7 @@ func (c *NoteService) GetNotes(ctx context.Context, userID int64, offset int) ([
 }
 
 func (c *NoteService) GetNewNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error) {
-	return c.repo.GetNotes(ctx, userID, offset)
+	return c.repo.GetNotes(ctx, userID, offset, nil)
 }
 
 func (c *NoteService) CreateTag(ctx context.Context, tag *entities.Tag) error {

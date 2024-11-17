@@ -9,7 +9,7 @@ defineProps<{
 </script>
 
 <template>
-    <h1>
+    <p>
         <span v-if="element.rich_text.meta">
             <span 
             v-for="(piece, i) of element.rich_text.meta" :key="i">
@@ -34,13 +34,13 @@ defineProps<{
             </span>
         </span>
         <span v-else>{{ element.rich_text.plain_text}}</span>
-    </h1>
+    </p>
 </template>
 
 
 <style scoped>
 
-h1{
+p{
     white-space: pre-line;
 }
 

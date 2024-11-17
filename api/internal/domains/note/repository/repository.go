@@ -4,9 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
 	"github.com/Corray333/keep_it/internal/domains/note/entities"
+	"github.com/Corray333/keep_it/internal/helpers"
 	"github.com/Corray333/keep_it/internal/storage"
+	"github.com/Masterminds/squirrel"
 )
 
 type NoteRepository struct {
@@ -72,11 +75,54 @@ type GetNotesInternal struct {
 	TagColor   *string         `db:"tag_color"`
 }
 
-func (r *NoteRepository) GetNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error) {
+func (r *NoteRepository) GetNotes(ctx context.Context, userID int64, offset int, filters []helpers.Filter) ([]entities.Note, error) {
 	notes := []entities.Note{}
 
+	sq := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+
+	tags := []string{}
+	for _, filter := range filters {
+		if filter.Field == helpers.FilterKeyTag {
+			tags = filter.Value.([]string)
+			break
+		}
+	}
+	fmt.Println("Filters: ", filters)
+	fmt.Println("Tags repo: ", tags)
+	// Query for postgres
+	notesSq := sq.Select("*").
+		From("notes").
+		Where(squirrel.Eq{"creator_id": userID}).
+		OrderBy("created_at DESC").
+		Limit(10).
+		Offset(uint64(offset))
+
+	noteTag := sq.Select("n.note_id", "creator_id", "title", "source", "original", "icon",
+		"created_at", "copied_at", "type", "content", "cover", "checked", "category_id", "tag_text").
+		FromSelect(notesSq, "n").
+		LeftJoin("note_tag ON n.note_id = note_tag.note_id")
+
+	query := sq.Select("note_id", "creator_id", "title", "source", "original", "icon",
+		"created_at", "copied_at", "type", "content", "cover", "checked", "category_id",
+		"tags.tag_text", "tag_color").
+		FromSelect(noteTag, "nt").
+		LeftJoin("tags ON nt.creator_id = tags.owner_id AND nt.tag_text = tags.tag_text")
+
+	if len(tags) > 0 {
+		query = query.Where(squirrel.Eq{"tags.tag_text": tags})
+	}
+
+	sql, args, err := query.ToSql()
+
+	fmt.Println(sql, args)
+
+	if err != nil {
+		slog.Error("failed to build query: " + err.Error())
+		return nil, err
+	}
+
 	notesInternal := []GetNotesInternal{}
-	if err := r.DB.Select(&notesInternal, "SELECT note_id, creator_id, title, source, original, icon, created_at, copied_at, type, content, cover, checked, category_id, tags.tag_text, tag_color FROM (SELECT n.note_id, creator_id, title, source, original, icon, created_at, copied_at, type, content, cover, checked, category_id, tag_text FROM (SELECT * FROM notes WHERE creator_id = $1 ORDER BY created_at DESC LIMIT 10 OFFSET $2) n LEFT JOIN note_tag ON n.note_id = note_tag.note_id) nt LEFT JOIN tags on nt.creator_id = tags.owner_id AND nt.tag_text = tags.tag_text", userID, offset); err != nil {
+	if err := r.DB.Select(&notesInternal, sql, args...); err != nil {
 		return nil, err
 	}
 

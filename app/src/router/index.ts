@@ -10,8 +10,14 @@ const router = createRouter({
     },
     {
       path: '/home',
+      alias: '/',
       name: 'home',
       component: () => import('../views/HomeView.vue')
+    },
+    {
+      path: '/notes',
+      name: 'notes',
+      component: () => import('../views/NotesView.vue')
     }
   ]
 })

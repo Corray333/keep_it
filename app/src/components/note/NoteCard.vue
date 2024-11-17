@@ -15,6 +15,8 @@ defineProps<{
 
 const showModal = ref(false)
 
+
+
 </script>
 
 <template>
@@ -91,7 +93,7 @@ const showModal = ref(false)
 }
 
 .note-card{
-    @apply bg-primary-bg rounded-2xl shadow-lg border-2 border-invert-bg-50 w-full cursor-pointer;
+    @apply relative z-0 bg-primary-bg rounded-2xl shadow-lg border-2 border-invert-bg-50 w-full cursor-pointer;
     @apply duration-300 hover:scale-105
 }
 
@@ -108,14 +110,14 @@ const showModal = ref(false)
 }
 
 .note-card-header-label{
-    @apply flex gap-2
+    @apply flex gap-2 font-medium
 }
 
 .note-page-wrapper{
     @apply fixed w-screen h-screen p-8 top-0 left-0 bg-black bg-opacity-50 z-50 flex justify-center items-center;
 }
 .note-page{
-    @apply flex flex-col border-2 border-invert-bg rounded-2xl;
+    @apply w-full lg:w-2/3 2xl:w-1/2 flex flex-col border-2 border-invert-bg rounded-2xl;
 }
 .note-page-cover{
     @apply w-full h-96 object-cover rounded-t-2xl;

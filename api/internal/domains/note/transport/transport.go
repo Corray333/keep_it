@@ -24,7 +24,7 @@ type service interface {
 	CreateNote(ctx context.Context, userID int64, note entities.Note) (noteID string, err error)
 	GetNoteByID(ctx context.Context, userID int64, noteID string) (*entities.Note, error)
 
-	GetNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error)
+	GetNotes(ctx context.Context, userID int64, offset int, filters map[string][]string) ([]entities.Note, error)
 	GetNewNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error)
 
 	GetTags(ctx context.Context, userID int64) ([]entities.Tag, error)
@@ -201,7 +201,9 @@ func (t *NoteTransport) getNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	notes, err := t.service.GetNotes(ctx, userID, offset)
+	filters := r.URL.Query()
+
+	notes, err := t.service.GetNotes(ctx, userID, offset, filters)
 	if err != nil {
 		slog.Error("failed to get notes: " + err.Error())
 		helpers.SendError(w, err)

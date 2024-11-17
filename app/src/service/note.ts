@@ -3,8 +3,8 @@ import { NoteTransport } from "@/transport/note"
 
 export class NoteService {
     noteTransport = new NoteTransport()
-    getNotes = async (offset: number) : Promise<Note[]>=>{
-        return await this.noteTransport.getNotes(offset)
+    getNotes = async (offset: number, tags: string[]) : Promise<Note[]>=>{
+        return await this.noteTransport.getNotes(offset, tags)
     }
 
     createTag = async (text: string, color: string) : Promise<boolean> =>{
