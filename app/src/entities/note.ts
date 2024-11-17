@@ -34,7 +34,7 @@ export interface RichText{
     meta: TextMeta[] 
 }
 
-export interface H1{
+export interface Text{
     type: string
     rich_text: RichText
 }

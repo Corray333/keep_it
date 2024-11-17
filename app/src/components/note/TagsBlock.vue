@@ -23,6 +23,7 @@ const props = defineProps<{
 }>()
 
 const filteredTags = computed(()=>{
+    if (!props.tags) return notesStore.tags
     return notesStore.tags.filter(tag => !props.tags.find(t => t.text === tag.text))
 })
 
@@ -40,6 +41,7 @@ const createNewTag = async ()=>{
         if (done){
             const tag = {text: newTag.value, color: newColor}
             notesStore.tags.push(tag)
+            if (!props.tags) props.tags = []
             props.tags.push(tag)
             newTag.value = ''
         }
@@ -70,9 +72,11 @@ const closeAddTagMenu = ()=>{
 
 <template>
     <div class="tags">
-        <span v-for="(tag, i) of tags.slice(0, 3)" :key="`tag${i}`" class="tag group" :style="{backgroundColor:tag.color}">
-            <div class="tag-label" :style="{backgroundColor:tag.color}"><p>{{tag.text}}</p></div>
-        </span>
+        <div class="added-tags" v-if="tags">
+            <span v-for="(tag, i) of tags.slice(0, 3)" :key="`tag${i}`" class="tag group" :style="{backgroundColor:tag.color}">
+                <div class="tag-label" :style="{backgroundColor:tag.color}"><p>{{tag.text}}</p></div>
+            </span>
+        </div>
         <span class="tag new-tag bg-secondary-bg" @click="showAddTagMenu = true" v-click-outside="closeAddTagMenu">
             <PlusIcon/>
 
@@ -90,7 +94,7 @@ const closeAddTagMenu = ()=>{
 
 <style scoped>
 
-.tags{
+.tags, .added-tags{
     @apply flex gap-1;
 }
 
@@ -108,7 +112,7 @@ const closeAddTagMenu = ()=>{
 }
 
 .add-tag-menu{
-    @apply absolute flex flex-col gap-2 p-2 bg-primary-bg rounded-2xl shadow-lg w-64 left-full ml-2 -mt-4 duration-300;
+    @apply absolute flex flex-col gap-2 p-2 bg-primary-bg rounded-2xl shadow-lg w-64 left-full ml-2 duration-300 will-change-transform origin-top-left;
 }
 
 .add-tag-menu>*{

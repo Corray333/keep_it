@@ -53,6 +53,10 @@ func (c *NoteService) GetNoteByID(ctx context.Context, userID int64, noteID stri
 		return nil, ErrNoAccess
 	}
 
+	if note.Tags == nil {
+		note.Tags = []entities.Tag{}
+	}
+
 	return note, nil
 }
 
@@ -78,7 +82,18 @@ func (c *NoteService) CreateNote(ctx context.Context, userID int64, note entitie
 }
 
 func (c *NoteService) GetNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error) {
-	return c.repo.GetNotes(ctx, userID, offset)
+	notes, err := c.repo.GetNotes(ctx, userID, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range notes {
+		if notes[i].Tags == nil {
+			notes[i].Tags = []entities.Tag{}
+		}
+	}
+
+	return notes, nil
 }
 
 func (c *NoteService) GetNewNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error) {

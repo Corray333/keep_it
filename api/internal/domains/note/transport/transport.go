@@ -3,17 +3,20 @@ package transport
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"log/slog"
 	"net/http"
 
 	"github.com/Corray333/keep_it/internal/domains/note/entities"
 	"github.com/Corray333/keep_it/internal/helpers"
 	"github.com/Corray333/keep_it/pkg/server/auth"
+	"github.com/IBM/sarama"
 	"github.com/go-chi/chi/v5"
 )
 
 type NoteTransport struct {
 	router  *chi.Mux
+	kafka   sarama.Consumer
 	service service
 }
 
@@ -32,9 +35,24 @@ type service interface {
 }
 
 func New(router *chi.Mux, service service) *NoteTransport {
+
+	// Create new consumer
+	brokers := []string{"kafka:9092"}
+
+	// Set up Sarama configuration
+	config := sarama.NewConfig()
+	config.Consumer.Return.Errors = true
+
+	// Create a new consumer
+	consumer, err := sarama.NewConsumer(brokers, config)
+	if err != nil {
+		log.Fatalf("Failed to create consumer: %v", err)
+	}
+
 	return &NoteTransport{
 		router:  router,
 		service: service,
+		kafka:   consumer,
 	}
 }
 
@@ -53,6 +71,50 @@ func (t *NoteTransport) RegisterRoutes() {
 		r.Post("/api/notes/{noteID}/tags", t.addTagToNote)
 		r.Delete("/api/notes/{noteID}/tags/{tagText}", t.removeTagFromNote)
 	})
+}
+
+func (t *NoteTransport) Run() {
+
+	// Topic to consume messages from
+	topic := "newNotes"
+
+	// Get partitions for the topic
+	partitions, err := t.kafka.Partitions(topic)
+	if err != nil {
+		log.Fatalf("Failed to get partitions for topic %s: %v", topic, err)
+	}
+
+	// Consume messages from each partition continuously
+	for _, partition := range partitions {
+		go func(partition int32) {
+			pc, err := t.kafka.ConsumePartition(topic, partition, sarama.OffsetNewest)
+			if err != nil {
+				log.Fatalf("Failed to start consumer for partition %d: %v", partition, err)
+			}
+			defer pc.Close()
+
+			for {
+				select {
+				case msg := <-pc.Messages():
+					if msg != nil {
+						var note entities.Note
+						if err := json.Unmarshal(msg.Value, &note); err != nil {
+							log.Printf("Failed to unmarshal message: %v", err)
+							continue
+						}
+
+						if _, err := t.service.CreateNote(context.Background(), note.CreatorID, note); err != nil {
+							slog.Error("Failed to create note: " + err.Error())
+							continue
+						}
+
+					}
+				case err := <-pc.Errors():
+					slog.Error("Failed to consume message: " + err.Error())
+				}
+			}
+		}(partition)
+	}
 }
 
 type CreateNoteRequest struct {

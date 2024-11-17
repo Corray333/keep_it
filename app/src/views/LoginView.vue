@@ -232,7 +232,7 @@ const componentsStore = useComponentsStore()
 
             <div class="login-page signup-password">
                 <div class="content">
-                    <h3 v-html="t('registerPage.title')"></h3>
+                    <h3>{{ t('registerPage.title') }}</h3>
                     <div class="input-with-reqs group">
                         <input v-model="password" type="password" :placeholder="t('registerPage.password')">
                         <div class="requirements">
@@ -251,7 +251,7 @@ const componentsStore = useComponentsStore()
 
             <div class="login-page login-password">
                 <div class="content">
-                    <h3 v-html="t('loginPage.title')"></h3>
+                    <h3 class=" whitespace-pre-line">{{ t('loginPage.title') }}</h3>
                     <div class="input-with-reqs group">
                         <input v-model="password" type="password" :placeholder="t('registerPage.password')">
                         <div class="requirements">
@@ -265,7 +265,7 @@ const componentsStore = useComponentsStore()
 
             <div class="login-page choose-verification-method">
                 <div class="content">
-                    <h3 v-html="t('verify.title')"></h3>
+                    <h3 class="whitespace-pre-line">{{ t('verify.title') }}</h3>
 
                     <div class="verify-row">
                         <div class="verify-email text-active">
@@ -291,7 +291,7 @@ const componentsStore = useComponentsStore()
 
             <div class="login-page">
                 <div class="content">
-                    <h3 v-html="t('verifyCode.title')"></h3>
+                    <h3 class=" whitespace-pre-line">{{ t('verifyCode.title') }}</h3>
 
                     <div class="code">
                         <input v-for="(char, i) of code" :key="i" v-model="code[i]" type="text" maxlength="1"

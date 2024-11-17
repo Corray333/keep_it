@@ -31,5 +31,6 @@ func (c *NoteController) Build() {
 }
 
 func (c *NoteController) Run() {
-	c.service.Run()
+	go c.service.Run()
+	go c.transport.Run()
 }
