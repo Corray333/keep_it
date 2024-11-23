@@ -15,6 +15,27 @@ export interface Note {
     icon: Icon
 }
 
+export class NoteTemplate implements Note {
+    id: string = ''
+    creator: number = 0
+    tags: Tag[] = []
+    title: string = ''
+    source: string = ''
+    original: string = ''
+    content: ContentElement[] = []
+    cover: string = ''
+    createdAt: number = 0
+    copiedAt: number = 0
+    type: number = 0
+    checked: boolean = false
+    categoryId: string = ''
+    icon: Icon = { type: '', data: '' }
+
+    constructor() {
+        
+    }
+}
+
 export interface ContentElement {
     type: string
 }

@@ -2,14 +2,22 @@
 
 import CloseIcon from '@/components/icons/close-icon.vue';
 import NoteCard from '@/components/note/NoteCard.vue';
-import type { Note, Tag } from '@/entities/note';
+import NoteCardSkeleton from '@/components/note/NoteCardSkeleton.vue';
+import { NoteTemplate, type Note, type Tag } from '@/entities/note';
+import { adjustHexColor } from '@/helpers/color';
 import { NoteService } from '@/service/note';
 import { useNotesStore } from '@/stores/notes';
 import { computed, onBeforeMount, ref, watch } from 'vue';
 
 const noteService = new NoteService()
 
-const notes = ref<Note[]>([])
+const notesUndefined = [new NoteTemplate(), new NoteTemplate(), new NoteTemplate(), new NoteTemplate(), new NoteTemplate(), new NoteTemplate(), new NoteTemplate(), new NoteTemplate(), new NoteTemplate(),]
+
+const notes = ref<Note[]>()
+
+const undefineNotes = ()=>{
+    // notes.value = notesUndefined
+}
 
 const pickedTags = ref<Tag[]>([])
 
@@ -25,6 +33,7 @@ const unpickTag = (tag: string)=>{
 watch(
     () => pickedTags.value,
     () => {
+        undefineNotes()
         fetchNotes()
     },
     { deep: true }
@@ -38,11 +47,11 @@ const fetchNotes = async () => {
 }
 
 onBeforeMount(()=>{
+    undefineNotes()
     fetchNotes()
 })
 
 const notesStore = useNotesStore()
-
 
 </script>
 
@@ -53,8 +62,8 @@ const notesStore = useNotesStore()
         <div class="tags">
             <h2>Tags</h2>
             <div class="tags-picker">
-                <span class="select-tag" v-for="(tag, i) of pickedTags" :key="i" @click="unpickTag(tag.text)" :style="{backgroundColor: tag.color}"><p>{{ tag.text }}</p><CloseIcon /></span>
-                <span class="select-tag" v-for="(tag, i) of filteredTags" :key="i" @click="pickedTags.push(tag)" :style="{backgroundColor: tag.color}"><p>{{ tag.text }}</p></span>
+                <span class="select-tag" v-for="(tag, i) of pickedTags" :key="i" @click="unpickTag(tag.text)" :style="{backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40)}"><p>{{ tag.text }}</p><CloseIcon /></span>
+                <span class="select-tag" v-for="(tag, i) of filteredTags" :key="i" @click="pickedTags.push(tag)" :style="{backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40)}"><p>{{ tag.text }}</p></span>
             </div>
         </div>
         
@@ -71,7 +80,7 @@ const notesStore = useNotesStore()
 <style scoped>
 
 .notes-page{
-    @apply flex flex-col gap-4 p-4
+    @apply flex flex-col gap-4 p-4 xl:p-8 xl:px-16
 }
 
 .home-body{
@@ -79,7 +88,7 @@ const notesStore = useNotesStore()
 }
 
 .notes{
-    @apply grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 w-full
+    @apply grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5 gap-4 w-full
 }
 
 .tags{

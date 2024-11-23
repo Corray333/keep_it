@@ -6,7 +6,10 @@ import ContentH1 from './content/ContentH1.vue';
 import ContentImage from './content/ContentImage.vue';
 import TagsBlock from './TagsBlock.vue';
 import ContentP from './content/ContentP.vue';
+
 import { ref } from 'vue';
+import { Accordion, AccordionContent, AccordionHeader, AccordionPanel, Panel } from 'primevue';
+import { TimeFromUnix } from '@/helpers/time';
 
 
 defineProps<{
@@ -23,50 +26,72 @@ const showModal = ref(false)
     <Transition name="delay">
         <section @click.self="showModal = false" v-show="showModal" class="note-page-wrapper">
             <Transition name="scale">
-                <div v-if="showModal" class="note-page">
-                    <img class="note-page-cover" :src="note.cover">
-
-                    <div class="note-page-label">
-                        <NoteIcon :icon="note.icon.data" />
-                        <a :href="note.original" target="_blank"><p>{{ note.title }}</p></a>
-                    </div>
-        
-                    <div class="note-page-content">
-                        <p v-for="(content_el, i) of note.content" :key="`el${i}`">
-                            <ContentH1 v-if="content_el.type == 'h1'" :element="(content_el as Text)" />
-                            <ContentP v-if="content_el.type == 'p'" :element="(content_el as Text)" />
-                            <ContentCheckbox v-if="content_el.type == 'checkbox'" :element="(content_el as Checkbox)" />
-                            <ContentImage v-if="content_el.type == 'img'" :element="(content_el as Image)"/>
-                        </p>
+                <div v-if="showModal" class="note-page-container">
+                    <div class="note-page">
+                        <img v-show="note.cover" class="note-page-cover" :src="note.cover">
+                        
+                        <div class="note-page-header">
+                            <Accordion unstyled class="w-full" expandIcon="pi" collapseIcon="pi">
+                                <AccordionPanel unstyled value="0" class="w-full">
+                                    <AccordionHeader unstyled class="w-full">
+                                        <div class="note-page-header-tab">
+                                            <div class="note-page-header-label">
+                                                <NoteIcon :icon="note.icon.data" />
+                                                <a :href="note.original" target="_blank"><p>{{ note.title }}</p></a>
+                                            </div>
+                
+                                            <TagsBlock :tags="note.tags" :noteID="note.id" /> 
+                                        </div>
+                                    </AccordionHeader>
+                                    <AccordionContent unstyled>
+                                        <div class="note-page-header-more">
+                                            <p>Copied at: {{ TimeFromUnix(note.copiedAt) }}</p>
+                                            <p>Created at: {{ TimeFromUnix(note.createdAt) }}</p>
+                                            <p>Source: {{ note.source }}</p>
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionPanel>
+                            </Accordion>
+                        </div>
+            
+                        <div class="note-page-content">
+                            <p v-for="(content_el, i) of note.content" :key="`el${i}`">
+                                <ContentH1 v-if="content_el.type == 'h1'" :element="(content_el as Text)" />
+                                <ContentP v-if="content_el.type == 'p'" :element="(content_el as Text)" />
+                                <ContentCheckbox v-if="content_el.type == 'checkbox'" :element="(content_el as Checkbox)" />
+                                <ContentImage v-if="content_el.type == 'img'" :element="(content_el as Image)"/>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </Transition>
         </section>
     </Transition>
 
-    <div @click="showModal = true" class="note-card">
-        <div class="note-card-header">
-            <div class="note-card-header-label">
-                <NoteIcon :icon="note.icon.data" />
-                <a :href="note.original" target="_blank"><p>{{ note.title }}</p></a>
+        <div @click="showModal = true" class="note-card">
+            <div class="note-card-header">
+                <div class="note-card-header-label">
+                    <NoteIcon :icon="note.icon.data" />
+                    <a :href="note.original" target="_blank"><p>{{ note.title }}</p></a>
+                </div>
+    
+                <TagsBlock :tags="note.tags" :noteID="note.id" />
             </div>
-
-            <TagsBlock :tags="note.tags" :noteID="note.id" />
+    
+            <div class="note-card-body">
+                <img v-show="note.cover" class="note-card-body-cover" :src="note.cover">
+    
+                <div class="note-card-body-content w-full">
+                    <p v-for="(content_el, i) of note.content" :key="`el${i}`">
+                        <ContentH1 v-if="content_el.type == 'h1'" :element="(content_el as Text)" />
+                        <ContentP v-if="content_el.type == 'p'" :element="(content_el as Text)" />
+                        <ContentCheckbox v-if="content_el.type == 'checkbox'" :element="(content_el as Checkbox)" />
+                        <ContentImage v-if="content_el.type == 'img'" :element="(content_el as Image)"/>
+                    </p>
+                </div>
+            </div>
         </div>
 
-        <div class="note-card-body">
-            <img class="note-card-body-cover" :src="note.cover">
-
-            <div class="note-card-body-content">
-                <p v-for="(content_el, i) of note.content" :key="`el${i}`">
-                    <ContentH1 v-if="content_el.type == 'h1'" :element="(content_el as Text)" />
-                    <ContentP v-if="content_el.type == 'p'" :element="(content_el as Text)" />
-                    <ContentCheckbox v-if="content_el.type == 'checkbox'" :element="(content_el as Checkbox)" />
-                    <ContentImage v-if="content_el.type == 'img'" :element="(content_el as Image)"/>
-                </p>
-            </div>
-        </div>
-    </div>
 </template>
 
 
@@ -110,23 +135,37 @@ const showModal = ref(false)
 }
 
 .note-card-header-label{
-    @apply flex gap-2 font-medium
+    @apply flex gap-2 font-medium w-full
+}
+
+.note-card-header-label p, .note-card-header-label a{
+    @apply overflow-hidden whitespace-nowrap text-ellipsis text-nowrap
 }
 
 .note-page-wrapper{
     @apply fixed w-screen h-screen p-8 top-0 left-0 bg-black bg-opacity-50 z-50 flex justify-center items-center;
 }
+.note-page-container{
+    @apply max-h-full h-fit w-full lg:w-2/3 bg-primary-bg 2xl:w-1/2  overflow-y-scroll border-2 border-invert-bg rounded-2xl;
+}
 .note-page{
-    @apply w-full lg:w-2/3 2xl:w-1/2 flex flex-col border-2 border-invert-bg rounded-2xl;
+    @apply w-full flex flex-col rounded-2xl bg-primary-bg;
 }
 .note-page-cover{
     @apply w-full h-96 object-cover rounded-t-2xl;
 }
-.note-page-label{
-    @apply p-4 flex items-center gap-2 text-xl border-b-2;
+.note-page-header{
+    @apply p-4 flex items-center gap-2 border-b-2 w-full justify-between;
+}
+.note-page-header-label{
+    @apply flex items-center gap-2 text-xl
+}
+.note-page-header-tab{
+    @apply flex justify-between items-center
 }
 .note-page-content{
     @apply p-4 flex flex-col gap-2;
 }
+
 
 </style>

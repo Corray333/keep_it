@@ -5,6 +5,7 @@ import { useNotesStore } from '@/stores/notes';
 import { NoteService } from '@/service/note';
 import { computed, onBeforeMount, ref } from 'vue';
 import CloseIcon from '../icons/close-icon.vue';
+import { adjustHexColor } from '@/helpers/color';
 
 const notesStore = useNotesStore()
 
@@ -28,7 +29,37 @@ const filteredTags = computed(()=>{
 })
 
 const generateRandomColor = ()=>{
-    const colors = ['#FFC0CB', '#FFB6C1', '#FF69B4', '#FF1493', '#DB7093', '#C71585', '#FFA07A', '#FA8072', '#E9967A', '#F08080', '#CD5C5C', '#DC143C', '#B22222', '#8B0000', '#FF0000', '#FF6347', '#FF4500', '#FF8C00', '#FFA500', '#FFD700', '#FFFF00', '#FFFFE0', '#FFFACD', '#FAFAD2', '#FFEFD5', '#FFE4B5', '#FFDAB9', '#EEE8AA', '#F0E68C', '#BDB76B', '#ADFF2F', '#7FFF00', '#7CFC00', '#00FF00', '#32CD32', '#98FB98', '#90EE90', '#00FA9A', '#00FF7F', '#3CB371', '#2E8B57', '#228B22', '#008000', '#006400', '#9ACD32', '#6B8E23', '#808000', '#556B2F', '#66CDAA', '#8FBC8F', '#20B2AA', '#008B8B', '#008080', '#00CED1', '#48D1CC', '#40E0D0', '#7FFFD4', '#66CDAA', '#00FA9A', '#00FF7F', '#3CB371', '#2E8B57', '#228B22', '#008000', '#006400', '#9ACD32', '#6B8E23', '#808000', '#556B2F', '#66CDAA', '#8FBC8F', '#20B2AA', '#008B8B', '#008080', '#00CED1', '#48D1CC', '#40E0D0', '#7FFFD4', '#66CDAA', '#00FA9A', '#00FF7F', '#3CB371', '#2E8B57', '#228B22', '#008000', '#006400', '#9ACD32', '#6B8E23', '#808000', '#556B2F']
+    const colors = [
+  "#F5A6B2", // мягкий темно-розовый
+  "#D68C99", // насыщенный розовый
+  "#C6A69B", // теплый бежево-коричневый
+  "#B5A28D", // глубокий светлый бежевый
+  "#E2C6A1", // золотисто-бежевый
+  "#D39C72", // теплый коричнево-желтый
+  "#CDAF88", // мягкий карамельный
+  "#A7C7C4", // темный мятный
+  "#A8B9D4", // глубокий голубой
+  "#B79FC8", // пастельно-фиолетовый с насыщенностью
+  "#7EC8B2", // насыщенный мятный
+  "#9E7BB3", // глубокий лавандовый
+  "#C3B7A3", // теплый светло-коричневый
+  "#6C7C6E", // темный оливково-зеленый
+  "#9F8B98", // насыщенный сиреневый
+  "#7E9AA2", // темный серо-голубой
+  "#B4C2A8", // глубокий оливковый
+  "#9F9F88", // теплый серо-желтый
+  "#A3D0B7", // насыщенный зеленый
+  "#8360A0", // темный фиолетовый
+  "#7D9F9A", // глубокий бирюзово-зеленый
+  "#7E5C61", // темный розово-коричневый
+  "#A0D1C0", // насыщенный морской зеленый
+  "#A9838B", // розово-коричневый
+  "#6C7B6F", // глубокий серо-зеленый
+  "#857F7C", // темный серый с зелеными оттенками
+  "#A86D79", // теплый терракотовый
+  "#7C7D9E"  // темный голубовато-серый
+]
+
     return colors[Math.floor(Math.random() * colors.length)]
 }
 
@@ -77,14 +108,14 @@ const closeAddTagMenu = ()=>{
                 <div class="tag-label" :style="{backgroundColor:tag.color}"><p>{{tag.text}}</p></div>
             </span>
         </div>
-        <span class="tag new-tag bg-secondary-bg" @click.stop="showAddTagMenu = true" v-click-outside="closeAddTagMenu">
+        <span class="tag new-tag bg-secondary-bg" @click.stop="showAddTagMenu = !showAddTagMenu" v-click-outside="closeAddTagMenu">
             <PlusIcon/>
 
             <div class="add-tag-menu" :class="{hidden: !showAddTagMenu}">
                 <input type="text" placeholder="Tag" v-model="newTag" @keyup.enter="createNewTag">
                 <div class="add-tag-menu-list">
-                    <span class="select-tag" v-for="(tag, i) of tags" :key="i" @click="removeTagFromNote(tag)" :style="{backgroundColor: tag.color}"><p>{{ tag.text }}</p><CloseIcon /></span>
-                    <span class="select-tag" v-for="(tag, i) of filteredTags" :key="i" @click="addTagToNote(tag)" :style="{backgroundColor: tag.color}"><p>{{ tag.text }}</p></span>
+                    <span class="select-tag" v-for="(tag, i) of tags" :key="i" @click="removeTagFromNote(tag)" :style="{backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40)}"><p>{{ tag.text }}</p><CloseIcon /></span>
+                    <span class="select-tag" v-for="(tag, i) of filteredTags" :key="i" @click="addTagToNote(tag)" :style="{backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40)}"><p>{{ tag.text }}</p></span>
                 </div>
             </div>
         </span>
@@ -99,13 +130,11 @@ const closeAddTagMenu = ()=>{
 }
 
 .tag{
-    @apply w-4 h-4 rounded-full relative flex justify-center cursor-pointer duration-300 hover:scale-125;
+    @apply w-4 h-4 rounded-full relative flex justify-center cursor-pointer duration-300;
 }
-.new-tag{
-    @apply hover:scale-100;
-}
+
 .tag-label{
-    @apply absolute bottom-full mb-2 px-2 rounded-full bg-secondary-bg shadow-lg scale-0 group-hover:scale-75 origin-bottom duration-300;
+    @apply absolute bottom-full right-0 whitespace-nowrap mb-1 px-2 rounded-full bg-secondary-bg shadow-lg scale-0 group-hover:scale-100 origin-bottom-right duration-300;
 }
 .tag-label>p{
     @apply invert
