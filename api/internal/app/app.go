@@ -75,7 +75,7 @@ func New() *App {
 	userController := user.NewUserController(router, store)
 	app.AddController(userController)
 
-	noteController := note.NewNoteController(router, store)
+	noteController := note.NewNoteController(router, store, userController.GetService())
 	app.AddController(noteController)
 
 	return app

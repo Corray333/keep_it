@@ -33,3 +33,7 @@ func (c *UserController) Build() {
 func (c *UserController) Run() {
 	c.service.Run()
 }
+
+func (c *UserController) GetService() *service.UserService {
+	return &c.service
+}

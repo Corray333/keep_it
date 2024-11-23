@@ -33,6 +33,8 @@ type repository interface {
 	FindUserByUsernameOrEmail(ctx context.Context, checkStr string) (user *entities.User, err error)
 
 	RenewTokens(ctx context.Context, userID int64, oldRefreshToken, newRefreshToken string, expiresAt int64) (err error)
+
+	GetUserByTelegramID(ctx context.Context, telegramID int64) (user *entities.User, err error)
 }
 
 type UserService struct {
@@ -245,4 +247,8 @@ func (s *UserService) RenewTokens(ctx context.Context, userID int64, oldRefreshT
 
 func (s *UserService) FindUserByUsernameOrEmail(ctx context.Context, checkStr string) (user *entities.User, err error) {
 	return s.repo.FindUserByUsernameOrEmail(ctx, checkStr)
+}
+
+func (s *UserService) GetUserByTelegramID(ctx context.Context, telegramID int64) (user *entities.User, err error) {
+	return s.repo.GetUserByTelegramID(ctx, telegramID)
 }

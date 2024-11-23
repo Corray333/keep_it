@@ -42,6 +42,8 @@ func (r *NoteRepository) CreateNote(ctx context.Context, note *entities.Note) (n
 		defer tx.Rollback()
 	}
 
+	fmt.Println("Created at: ", note.CreatedAt)
+
 	if err := tx.QueryRow("INSERT INTO notes (creator_id, title, source, original, created_at, type, category_id, content, icon, cover) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING note_id", note.CreatorID, note.Title, note.Source, note.Original, note.CreatedAt, note.Type, note.CategoryId, note.Content, note.Icon, note.Cover).Scan(&noteID); err != nil {
 		return "", err
 	}
@@ -89,28 +91,29 @@ func (r *NoteRepository) GetNotes(ctx context.Context, userID int64, offset int,
 	}
 	fmt.Println("Filters: ", filters)
 	fmt.Println("Tags repo: ", tags)
+
 	// Query for postgres
-	notesSq := sq.Select("*").
-		From("notes").
-		Where(squirrel.Eq{"creator_id": userID}).
-		OrderBy("created_at DESC").
+	filteredNotes := sq.Select("n.note_id", "n.creator_id", "n.title", "n.source", "n.original", "n.icon",
+		"n.created_at", "n.copied_at", "n.type", "n.content", "n.cover", "n.checked", "n.category_id").
+		From("notes n").
+		Where(squirrel.Eq{"n.creator_id": userID}).
+		OrderBy("n.created_at DESC").
 		Limit(10).
 		Offset(uint64(offset))
 
-	noteTag := sq.Select("n.note_id", "creator_id", "title", "source", "original", "icon",
-		"created_at", "copied_at", "type", "content", "cover", "checked", "category_id", "tag_text").
-		FromSelect(notesSq, "n").
-		LeftJoin("note_tag ON n.note_id = note_tag.note_id")
-
-	query := sq.Select("note_id", "creator_id", "title", "source", "original", "icon",
-		"created_at", "copied_at", "type", "content", "cover", "checked", "category_id",
-		"tags.tag_text", "tag_color").
-		FromSelect(noteTag, "nt").
-		LeftJoin("tags ON nt.creator_id = tags.owner_id AND nt.tag_text = tags.tag_text")
-
 	if len(tags) > 0 {
-		query = query.Where(squirrel.Eq{"tags.tag_text": tags})
+		filteredNotes = filteredNotes.
+			Join("note_tag nt ON n.note_id = nt.note_id").
+			Where(squirrel.Eq{"nt.tag_text": tags})
 	}
+
+	// Outer query to fetch all associated tags for the filtered notes
+	query := sq.Select("fn.note_id", "fn.creator_id", "fn.title", "fn.source", "fn.original",
+		"fn.icon", "fn.created_at", "fn.copied_at", "fn.type", "fn.content", "fn.cover",
+		"fn.checked", "fn.category_id", "t.tag_text", "t.tag_color").
+		FromSelect(filteredNotes, "fn").
+		LeftJoin("note_tag nt ON fn.note_id = nt.note_id").
+		LeftJoin("tags t ON nt.tag_text = t.tag_text AND t.owner_id = fn.creator_id")
 
 	sql, args, err := query.ToSql()
 

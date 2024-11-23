@@ -3,9 +3,11 @@ package transport
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/Corray333/keep_it/internal/domains/note/entities"
 	"github.com/Corray333/keep_it/internal/helpers"
@@ -21,7 +23,7 @@ type NoteTransport struct {
 }
 
 type service interface {
-	CreateNote(ctx context.Context, userID int64, note entities.Note) (noteID string, err error)
+	CreateNote(ctx context.Context, note *entities.NewNoteMessage) (noteID string, err error)
 	GetNoteByID(ctx context.Context, userID int64, noteID string) (*entities.Note, error)
 
 	GetNotes(ctx context.Context, userID int64, offset int, filters map[string][]string) ([]entities.Note, error)
@@ -97,13 +99,15 @@ func (t *NoteTransport) Run() {
 				select {
 				case msg := <-pc.Messages():
 					if msg != nil {
-						var note entities.Note
-						if err := json.Unmarshal(msg.Value, &note); err != nil {
+						note := &entities.NewNoteMessage{}
+						if err := json.Unmarshal(msg.Value, note); err != nil {
 							log.Printf("Failed to unmarshal message: %v", err)
 							continue
 						}
 
-						if _, err := t.service.CreateNote(context.Background(), note.CreatorID, note); err != nil {
+						fmt.Println("Received message: ", string(msg.Value))
+
+						if _, err := t.service.CreateNote(context.Background(), note); err != nil {
 							slog.Error("Failed to create note: " + err.Error())
 							continue
 						}
@@ -142,7 +146,15 @@ func (t *NoteTransport) createNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	noteID, err := t.service.CreateNote(ctx, userID, req.Note)
+	req.Note.CreatorID = userID
+
+	newNoteMsg := &entities.NewNoteMessage{
+		Note:   req.Note,
+		Source: "api",
+		UserID: strconv.Itoa(int(userID)),
+	}
+
+	noteID, err := t.service.CreateNote(ctx, newNoteMsg)
 	if err != nil {
 		slog.Error("failed to create note: " + err.Error())
 		helpers.SendError(w, err)

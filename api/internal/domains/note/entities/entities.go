@@ -13,14 +13,14 @@ type Note struct {
 	Content        json.RawMessage `json:"content" db:"content"`
 	Cover          string          `json:"cover" db:"cover"`
 
-	CreatedAt int64 `json:"created_at" db:"created_at"`
-	CopiedAt  int64 `json:"copied_at" db:"copied_at"`
+	CreatedAt int64 `json:"createdAt" db:"created_at"`
+	CopiedAt  int64 `json:"copiedAt" db:"copied_at"`
 
 	Type int16 `json:"type" db:"type"`
 
 	Checked bool `json:"checked" db:"checked"`
 
-	CategoryId *string `json:"category_id" db:"category_id"`
+	CategoryId *string `json:"categoryID" db:"category_id"`
 
 	IconDecoded Icon            `json:"-" db:"-"`
 	Icon        json.RawMessage `json:"icon" db:"icon"`
@@ -37,4 +37,10 @@ type Icon struct {
 	Type string `json:"type"`
 	Data string `json:"data"`
 	Name string `json:"name"`
+}
+
+type NewNoteMessage struct {
+	Note   Note   `json:"note"`
+	Source string `json:"source"`
+	UserID string `json:"userID"`
 }

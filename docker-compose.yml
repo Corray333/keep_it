@@ -67,6 +67,18 @@ services:
     command: make run
     depends_on:
       - db
+
+  parser-vk:
+    build: 
+      context: ./parsers/vk
+      dockerfile: Dockerfile
+    volumes:
+      - ./parsers/vk:/app
+      - .env:/app/.env
+      - ./files:/app/files
+    command: make run
+    depends_on:
+      - db
   
   app:
     image: node:latest

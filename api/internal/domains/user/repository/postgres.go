@@ -118,3 +118,15 @@ func (s *UserRepository) RenewTokens(ctx context.Context, userID int64, oldRefre
 
 	return nil
 }
+
+func (s *UserRepository) GetUserByTelegramID(ctx context.Context, telegramID int64) (user *entities.User, err error) {
+	user = &entities.User{}
+
+	if err = s.DB.Get(user, `
+		SELECT * FROM users WHERE tg_id = $1;
+	`, telegramID); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}

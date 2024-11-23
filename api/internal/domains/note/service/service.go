@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/Corray333/keep_it/internal/domains/note/entities"
+	user_entities "github.com/Corray333/keep_it/internal/domains/user/entities"
 	"github.com/Corray333/keep_it/internal/helpers"
 )
 
@@ -29,13 +31,19 @@ type repository interface {
 	AddTagToNote(ctx context.Context, tag *entities.Tag, noteID string) error
 }
 
-type NoteService struct {
-	repo repository
+type userService interface {
+	GetUserByTelegramID(ctx context.Context, telegramID int64) (*user_entities.User, error)
 }
 
-func New(repo repository) *NoteService {
+type NoteService struct {
+	repo repository
+	userService
+}
+
+func New(repo repository, userService userService) *NoteService {
 	s := &NoteService{
-		repo: repo,
+		repo:        repo,
+		userService: userService,
 	}
 	return s
 }
@@ -60,15 +68,27 @@ func (c *NoteService) GetNoteByID(ctx context.Context, userID int64, noteID stri
 	return note, nil
 }
 
-func (c *NoteService) CreateNote(ctx context.Context, userID int64, note entities.Note) (noteID string, err error) {
+func (c *NoteService) CreateNote(ctx context.Context, note *entities.NewNoteMessage) (noteID string, err error) {
 	ctx, err = c.repo.Begin(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	note.CreatorID = userID
+	if note.Source == "tg" {
+		userID, err := strconv.Atoi(note.UserID)
+		if err != nil {
+			return "", err
+		}
 
-	noteID, err = c.repo.CreateNote(ctx, &note)
+		user, err := c.GetUserByTelegramID(ctx, int64(userID))
+		if err != nil {
+			return "", err
+		}
+
+		note.Note.CreatorID = user.ID
+	}
+
+	noteID, err = c.repo.CreateNote(ctx, &note.Note)
 	if err != nil {
 		_ = c.repo.Rollback(ctx)
 		return "", err

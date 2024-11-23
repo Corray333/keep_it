@@ -65,8 +65,7 @@ func New() *Storage {
 	}
 }
 
-func (s *Storage) NewNote(ctx context.Context, note *entities.Note) error {
-	note.CreatorID = 1
+func (s *Storage) NewNote(ctx context.Context, note *entities.NewNoteMessage) error {
 
 	// Define the topic and message
 	topic := "newNotes"
@@ -82,6 +81,9 @@ func (s *Storage) NewNote(ctx context.Context, note *entities.Note) error {
 		Value: sarama.StringEncoder(encoded),
 	}
 
+	fmt.Println()
+	fmt.Println("Note: ", note)
+	fmt.Println()
 	_, _, err = s.Kafka.SendMessage(msg)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to produce message: "+err.Error())
@@ -126,7 +128,6 @@ func (s *Storage) GetNotes(ctx context.Context, creationDate, chtID int64) ([]*e
 		return nil, err
 	}
 
-	fmt.Println(notes)
 	var res []*entities.Note
 	for _, note := range notes {
 		var n *entities.Note

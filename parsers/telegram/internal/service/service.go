@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/Corray333/keep_it/parsers/telegram/internal/entities"
@@ -21,7 +22,7 @@ type fileManager interface {
 }
 
 type repository interface {
-	NewNote(ctx context.Context, note *entities.Note) error
+	NewNote(ctx context.Context, note *entities.NewNoteMessage) error
 
 	SaveNote(ctx context.Context, creationDate, chatID int64, note *entities.Note) error
 	GetNotes(ctx context.Context, creationDate, chtID int64) ([]*entities.Note, error)
@@ -70,21 +71,21 @@ func (s *Service) ParseMessage(ctx context.Context, message *tgbotapi.Message) e
 
 		note.Cover = filePath
 
-		caption := message.Caption
+	}
+	caption := message.Caption
 
-		if caption != "" {
-			captionMeta := message.CaptionEntities
-			metas := parseEntities(captionMeta)
-			captionEl := entities.TextElement{
-				Type: entities.ElementTypeParagraph,
-				RichText: entities.RichText{
-					PlainText: caption,
-					Meta:      metas,
-				},
-			}
-
-			note.ContentDecoded = append(note.ContentDecoded, captionEl)
+	if caption != "" {
+		captionMeta := message.CaptionEntities
+		metas := parseEntities(captionMeta)
+		captionEl := entities.TextElement{
+			Type: entities.ElementTypeParagraph,
+			RichText: entities.RichText{
+				PlainText: caption,
+				Meta:      metas,
+			},
 		}
+
+		note.ContentDecoded = append(note.ContentDecoded, captionEl)
 	}
 
 	if message.Text != "" {
@@ -144,7 +145,13 @@ func (s *Service) ParseMessage(ctx context.Context, message *tgbotapi.Message) e
 	}
 	finalNote.Content = contentBytes
 
-	if err = s.repo.NewNote(ctx, finalNote); err != nil {
+	newNoteMsg := &entities.NewNoteMessage{
+		Note:   *finalNote,
+		Source: "tg",
+		UserID: strconv.Itoa(int(message.From.ID)),
+	}
+
+	if err = s.repo.NewNote(ctx, newNoteMsg); err != nil {
 		return err
 	}
 
