@@ -118,3 +118,10 @@
 .card-stack>:nth-last-child(1) {
   transform: translateY(0px) scale(1);
 }
+
+/* PrimeVue */
+.p-image-mask img{
+  max-width: 100vw;
+  max-height: 100vh;
+  padding: 1rem;
+}

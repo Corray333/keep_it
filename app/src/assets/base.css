@@ -10,6 +10,7 @@
   --primary: #FFC555;
   --light: #F9F9F9;
   --light-50: #8a8a8a;
+  --light-opacity: rgba(249, 249, 249, 0.1);
 
   --correct: #5ddf5d;
   --error: #ff5d5d;
@@ -20,5 +21,6 @@
   --secondary-bg: var(--half-dark);
   --invert-bg: var(--light);
   --invert-bg-50: var(--light-50);
+  --invert-bg-opacity: var(--light-opacity);
   --primary: var(--primary);
 }

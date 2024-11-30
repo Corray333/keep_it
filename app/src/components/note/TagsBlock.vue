@@ -6,6 +6,7 @@ import { NoteService } from '@/service/note';
 import { computed, onBeforeMount, ref } from 'vue';
 import CloseIcon from '../icons/close-icon.vue';
 import { adjustHexColor } from '@/helpers/color';
+import { Popover } from 'primevue';
 
 const notesStore = useNotesStore()
 
@@ -23,9 +24,14 @@ const props = defineProps<{
     noteID: string
 }>()
 
-const filteredTags = computed(()=>{
-    if (!props.tags) return notesStore.tags
-    return notesStore.tags.filter(tag => !props.tags.find(t => t.text === tag.text))
+const newTag = ref<string>('')
+
+const filteredTags = computed(() => {
+    const lowerCaseNewTag = newTag.value.toLowerCase()
+    if (!props.tags) return notesStore.tags.filter(tag => tag.text.toLowerCase().includes(lowerCaseNewTag))
+    return notesStore.tags
+        .filter(tag => !props.tags.find(t => t.text === tag.text))
+        .filter(tag => tag.text.toLowerCase().includes(lowerCaseNewTag))
 })
 
 const generateRandomColor = ()=>{
@@ -63,7 +69,6 @@ const generateRandomColor = ()=>{
     return colors[Math.floor(Math.random() * colors.length)]
 }
 
-const newTag = ref<string>('')
 
 const createNewTag = async ()=>{
     if (newTag.value){
@@ -76,6 +81,15 @@ const createNewTag = async ()=>{
             props.tags.push(tag)
             newTag.value = ''
         }
+    }
+}
+
+const enterTag = ()=>{
+    const foundTag = filteredTags.value.find(tag => tag.text === newTag.value)
+    if (foundTag){
+        addTagToNote(foundTag)
+    } else {
+        createNewTag()
     }
 }
 
@@ -93,10 +107,11 @@ const addTagToNote = async (tag: Tag)=>{
     }
 }
 
-const showAddTagMenu = ref(false)
 
-const closeAddTagMenu = ()=>{
-    showAddTagMenu.value = false
+const pop = ref()
+
+const togglePop = (event) => {
+    pop.value.toggle(event);
 }
 
 </script>
@@ -104,20 +119,42 @@ const closeAddTagMenu = ()=>{
 <template>
     <div class="tags">
         <div class="added-tags" v-if="tags">
-            <span v-for="(tag, i) of tags.slice(0, 3)" :key="`tag${i}`" class="tag group" :style="{backgroundColor:tag.color}">
-                <div class="tag-label" :style="{backgroundColor:tag.color}"><p>{{tag.text}}</p></div>
+            <span v-for="(tag, i) of tags.slice(0, 3)" :key="`tag${i}`" class="tag group" :style="{backgroundColor:tag.color}"
+            v-tooltip.bottom="{
+                value: tag.text,
+                autoHide: false,
+                pt: {
+                    arrow: {
+                        style: {
+                            borderBottomColor: tag.color
+                        }
+                    },
+                    text: {
+                        style:{
+                            backgroundColor: tag.color,
+                            color: adjustHexColor(tag.color, 30, 40),
+                            borderRadius: '999px',
+                            padding: '0rem 0.5rem'
+                        }
+                    }
+                }
+            }">
+                <!-- <div class="tag-label" :style="{backgroundColor:tag.color}"><p>{{tag.text}}</p></div> -->
             </span>
         </div>
-        <span class="tag new-tag bg-secondary-bg" @click.stop="showAddTagMenu = !showAddTagMenu" v-click-outside="closeAddTagMenu">
+        <span class="tag new-tag bg-secondary-bg" @click.stop="togglePop" @click-outside="togglePop">
             <PlusIcon/>
 
-            <div class="add-tag-menu" :class="{hidden: !showAddTagMenu}">
-                <input type="text" placeholder="Tag" v-model="newTag" @keyup.enter="createNewTag">
-                <div class="add-tag-menu-list">
-                    <span class="select-tag" v-for="(tag, i) of tags" :key="i" @click="removeTagFromNote(tag)" :style="{backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40)}"><p>{{ tag.text }}</p><CloseIcon /></span>
-                    <span class="select-tag" v-for="(tag, i) of filteredTags" :key="i" @click="addTagToNote(tag)" :style="{backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40)}"><p>{{ tag.text }}</p></span>
+            <Popover ref="pop">
+                <div class="add-tag-menu">
+                    <input type="text" placeholder="Tag" v-model="newTag" @keyup.enter="enterTag">
+                    <div class="add-tag-menu-list">
+                        <span class="select-tag" v-for="(tag, i) of tags" :key="i" @click="removeTagFromNote(tag)" :style="{backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40)}"><p>{{ tag.text }}</p><CloseIcon /></span>
+                        <span class="select-tag" v-for="(tag, i) of filteredTags" :key="i" @click="addTagToNote(tag)" :style="{backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40)}"><p>{{ tag.text }}</p></span>
+                    </div>
                 </div>
-            </div>
+            </Popover>
+
         </span>
     </div>
 </template>
@@ -141,7 +178,11 @@ const closeAddTagMenu = ()=>{
 }
 
 .add-tag-menu{
-    @apply absolute z-20 flex flex-col gap-2 p-2 bg-primary-bg rounded-2xl shadow-lg w-64 right-full ml-2 duration-300 will-change-transform origin-top-right;
+    @apply flex flex-col gap-2 bg-primary-bg rounded-2xl max-w-96;
+}
+
+.add-tag-menu input{
+    @apply text-invert-bg
 }
 
 .add-tag-menu>*{

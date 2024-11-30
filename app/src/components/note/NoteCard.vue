@@ -8,7 +8,7 @@ import TagsBlock from './TagsBlock.vue';
 import ContentP from './content/ContentP.vue';
 
 import { ref } from 'vue';
-import { Accordion, AccordionContent, AccordionHeader, AccordionPanel, Panel } from 'primevue';
+import { Accordion, AccordionContent, AccordionHeader, AccordionPanel, Image as Img, Panel } from 'primevue';
 import { TimeFromUnix } from '@/helpers/time';
 
 
@@ -18,6 +18,9 @@ defineProps<{
 
 const showModal = ref(false)
 
+const openNote = (event: MouseEvent)=>{
+    showModal.value = true
+}
 
 
 </script>
@@ -28,7 +31,15 @@ const showModal = ref(false)
             <Transition name="scale">
                 <div v-if="showModal" class="note-page-container">
                     <div class="note-page">
-                        <img v-show="note.cover" class="note-page-cover" :src="note.cover">
+
+                        <Img v-show="note.cover" alt="Image" width="250" preview>
+                            <template #image>
+                                <img :src="note.cover" class="note-page-cover" alt="image" />
+                            </template>
+                            <template #preview="slotProps">
+                                <img :src="note.cover" alt="preview" :style="slotProps.style" @click="slotProps.onClick" />
+                            </template>
+                        </Img>
                         
                         <div class="note-page-header">
                             <Accordion unstyled class="w-full" expandIcon="pi" collapseIcon="pi">
@@ -68,7 +79,7 @@ const showModal = ref(false)
         </section>
     </Transition>
 
-        <div @click="showModal = true" class="note-card">
+        <div @click="openNote" class="note-card">
             <div class="note-card-header">
                 <div class="note-card-header-label">
                     <NoteIcon :icon="note.icon.data" />
@@ -119,7 +130,8 @@ const showModal = ref(false)
 
 .note-card{
     @apply relative z-0 bg-primary-bg rounded-2xl shadow-lg border-2 border-invert-bg-50 w-full cursor-pointer;
-    @apply duration-300 hover:scale-105
+    @apply duration-300 hover:shadow-lg hover:shadow-invert-bg-opacity;
+    word-break: break-word;
 }
 
 .note-card-header{

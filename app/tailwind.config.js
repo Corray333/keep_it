@@ -13,7 +13,8 @@ export default {
         'secondary-bg':'var(--secondary-bg)',
         'primary':'var(--primary)',
         'invert-bg':'var(--invert-bg)',
-        'invert-bg-50':'var(--invert-bg-50)'
+        'invert-bg-50':'var(--invert-bg-50)',
+        'invert-bg-opacity': 'var(--invert-bg-opacity)',
       }
     },
   },

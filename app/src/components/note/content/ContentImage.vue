@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { Image } from '@/entities/note';
+import { Image as Img } from 'primevue';
 
 
 const props = defineProps<{
@@ -10,7 +11,7 @@ const props = defineProps<{
 
 <template>
     <div class="image" :style="{justifyContent: element.align}">
-        <img :src="element.src" alt="" :style="{width: element.width+'%'}">
+        <Img :src="element.src" preview :style="{width: element.width+'%'}"/>
     </div>
 </template>
 
