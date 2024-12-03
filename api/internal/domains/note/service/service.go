@@ -23,6 +23,7 @@ type repository interface {
 	CreateNote(ctx context.Context, note *entities.Note) (noteID string, err error)
 	GetNote(ctx context.Context, noteID string) (*entities.Note, error)
 	GetNotes(ctx context.Context, userID int64, offset int, filters []helpers.Filter) ([]entities.Note, error)
+	DeleteNotes(ctx context.Context, userID int64, noteIDs []string) error
 
 	GetTags(ctx context.Context, userID int64) ([]entities.Tag, error)
 	CreateTag(ctx context.Context, tag *entities.Tag) error
@@ -171,4 +172,8 @@ func (s *NoteService) AddTagToNote(ctx context.Context, tag *entities.Tag, noteI
 
 func (c *NoteService) GetTags(ctx context.Context, userID int64) ([]entities.Tag, error) {
 	return c.repo.GetTags(ctx, userID)
+}
+
+func (c *NoteService) DeleteNotes(ctx context.Context, useID int64, noteIDs []string) error {
+	return c.repo.DeleteNotes(ctx, useID, noteIDs)
 }

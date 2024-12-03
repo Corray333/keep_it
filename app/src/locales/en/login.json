@@ -8,7 +8,7 @@
         "logInUsing":"or log in using "
     },
     "registerPage":{
-        "title":"Sorry, I don't know<br/>who you are😑",
+        "title":"Sorry, I don't know\nwho you are😑",
         "username":"username",
         "password":"password",
         "repeatPassword":"repeat password"
@@ -22,7 +22,7 @@
         "refCode":"referal code"
     },
     "verify":{
-        "title":"We need to verify<br/>your account 🔍",
+        "title":"We need to verify\nyour account 🔍",
         "useEmail":"use email",
         "useTg":"use telegram"
     },

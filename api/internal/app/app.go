@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/Corray333/keep_it/internal/config"
+	"github.com/Corray333/keep_it/internal/domains/category"
 	"github.com/Corray333/keep_it/internal/domains/note"
 	"github.com/Corray333/keep_it/internal/domains/user"
 	"github.com/Corray333/keep_it/internal/storage"
@@ -77,6 +78,9 @@ func New() *App {
 
 	noteController := note.NewNoteController(router, store, userController.GetService())
 	app.AddController(noteController)
+
+	categoryController := category.NewCategoryController(router, store, userController.GetService())
+	app.AddController(categoryController)
 
 	return app
 }

@@ -53,6 +53,7 @@ func (s *Service) ParseMessage(ctx context.Context, message *tgbotapi.Message) e
 		note.Title = "From " + message.ForwardFromChat.Title
 		note.Original = fmt.Sprintf("https://t.me/%s/%d", message.ForwardFromChat.UserName, message.ForwardFromMessageID)
 		note.CopiedAt = int64(message.ForwardDate)
+		// note.CreatedAt = int64(message.date)
 	} else {
 		note.Title = "Untitled"
 		note.CopiedAt = int64(message.Date)

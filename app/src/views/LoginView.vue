@@ -222,7 +222,7 @@ const componentsStore = useComponentsStore()
                 <div class="content">
                     <h3>{{ t('usernamePage.title') }}</h3>
                     <input v-model="username" type="text" :placeholder="t('usernamePage.usernameOrEmail')">
-                    <button @click="checkUsername" class="btn-type-1">{{ t('continueBtn') }}</button>
+                    <button @click="checkUsername" class="button">{{ t('continueBtn') }}</button>
                     <span class="flex items-center gap-2">
                         <p>{{ t('usernamePage.logInUsing') }}</p>
                         <GoogleIcon @click="componentsStore.newError()" class=" text-xl text-active" />
@@ -232,7 +232,7 @@ const componentsStore = useComponentsStore()
 
             <div class="login-page signup-password">
                 <div class="content">
-                    <h3>{{ t('registerPage.title') }}</h3>
+                    <h3 class=" whitespace-pre-line">{{ t('registerPage.title') }}</h3>
                     <div class="input-with-reqs group">
                         <input v-model="password" type="password" :placeholder="t('registerPage.password')">
                         <div class="requirements">

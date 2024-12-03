@@ -25,6 +25,7 @@ type NoteTransport struct {
 type service interface {
 	CreateNote(ctx context.Context, note *entities.NewNoteMessage) (noteID string, err error)
 	GetNoteByID(ctx context.Context, userID int64, noteID string) (*entities.Note, error)
+	DeleteNotes(ctx context.Context, useID int64, noteIDs []string) error
 
 	GetNotes(ctx context.Context, userID int64, offset int, filters map[string][]string) ([]entities.Note, error)
 	GetNewNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error)
@@ -66,6 +67,7 @@ func (t *NoteTransport) RegisterRoutes() {
 		r.Get("/api/notes", t.getNotes)
 		r.Get("/api/notes/new", t.getNewNotes)
 		r.Get("/api/notes/{note_id}", t.getNote)
+		r.Delete("/api/notes", t.deleteNote)
 
 		r.Post("/api/tags", t.createTag)
 		r.Delete("/api/tags/{tagText}", t.deleteTag)
@@ -399,4 +401,28 @@ func (t *NoteTransport) removeTagFromNote(w http.ResponseWriter, r *http.Request
 		helpers.SendError(w, err)
 		return
 	}
+}
+
+func (t *NoteTransport) deleteNote(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := r.Context().Value(helpers.CtxUserIDKey).(int64)
+	if !ok {
+		http.Error(w, "user id not found in context", http.StatusInternalServerError)
+		slog.Error("user id not found in context")
+		return
+	}
+
+	noteIDs := r.URL.Query()["note_id"]
+	if len(noteIDs) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	if err := t.service.DeleteNotes(ctx, userID, noteIDs); err != nil {
+		slog.Error("failed to remove note: " + err.Error())
+		helpers.SendError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

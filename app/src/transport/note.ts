@@ -73,4 +73,18 @@ export class NoteTransport {
             return false
         }
     }
+
+    deleteNotes = async (noteIDs: string[]) : Promise<boolean> =>{
+        let query = '/notes?'
+        for (const noteID of noteIDs){
+            query += `note_id=${noteID}&`
+        }
+        try {
+            await api.delete(query)
+            return true
+        } catch (error) {
+            logError(error)
+            return false
+        }
+    }
 }

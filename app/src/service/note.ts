@@ -7,6 +7,10 @@ export class NoteService {
         return await this.noteTransport.getNotes(offset, tags)
     }
 
+    deleteNotes = async (noteIDs: string[]) : Promise<boolean>=>{
+        return await this.noteTransport.deleteNotes(noteIDs)
+    }
+
     createTag = async (text: string, color: string) : Promise<boolean> =>{
         return await this.noteTransport.createTag(text, color)
     }

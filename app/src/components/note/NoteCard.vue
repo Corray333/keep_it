@@ -7,27 +7,38 @@ import ContentImage from './content/ContentImage.vue';
 import TagsBlock from './TagsBlock.vue';
 import ContentP from './content/ContentP.vue';
 
-import { ref } from 'vue';
-import { Accordion, AccordionContent, AccordionHeader, AccordionPanel, Image as Img, Panel } from 'primevue';
+import {  ref } from 'vue';
+import { Accordion, AccordionContent, AccordionHeader, AccordionPanel, Image as Img } from 'primevue';
 import { TimeFromUnix } from '@/helpers/time';
+import CheckBox from '../CheckBox.vue';
+import { adjustHexColor } from '@/helpers/color';
 
 
-defineProps<{
-    note: Note
+const emit = defineEmits(['select-toggle'])
+
+const props = defineProps<{
+    note: Note,
+    selected: boolean,
+    selectable: boolean
 }>()
 
 const showModal = ref(false)
 
-const openNote = (event: MouseEvent)=>{
-    showModal.value = true
+const openNote = ()=>{
+    if (props.selectable) {
+        emit('select-toggle')
+    } else {
+        showModal.value = true
+    }
 }
+
 
 
 </script>
 
 <template>
     <Transition name="delay">
-        <section @click.self="showModal = false" v-show="showModal" class="note-page-wrapper">
+        <section @click.self="showModal = false" @contextmenu.stop v-show="showModal" class="note-page-wrapper">
             <Transition name="scale">
                 <div v-if="showModal" class="note-page-container">
                     <div class="note-page">
@@ -36,7 +47,7 @@ const openNote = (event: MouseEvent)=>{
                             <template #image>
                                 <img :src="note.cover" class="note-page-cover" alt="image" />
                             </template>
-                            <template #preview="slotProps">
+                            <template #preview="slotProps: any">
                                 <img :src="note.cover" alt="preview" :style="slotProps.style" @click="slotProps.onClick" />
                             </template>
                         </Img>
@@ -56,6 +67,13 @@ const openNote = (event: MouseEvent)=>{
                                     </AccordionHeader>
                                     <AccordionContent unstyled>
                                         <div class="note-page-header-more">
+                                            <div class="tags-picker">
+                                                <span class="select-tag" v-for="(tag, i) of note.tags" :key="i" 
+                                                    :style="{ backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40) }">
+                                                    <p>{{ tag.text }}</p>
+                                                    <CloseIcon />
+                                                </span>
+                                            </div>
                                             <p>Copied at: {{ TimeFromUnix(note.copiedAt) }}</p>
                                             <p>Created at: {{ TimeFromUnix(note.createdAt) }}</p>
                                             <p>Source: {{ note.source }}</p>
@@ -82,8 +100,9 @@ const openNote = (event: MouseEvent)=>{
         <div @click="openNote" class="note-card">
             <div class="note-card-header">
                 <div class="note-card-header-label">
+                    <CheckBox v-if="selectable" :model-value="selected" :disabled="false" />
                     <NoteIcon :icon="note.icon.data" />
-                    <a :href="note.original" target="_blank"><p>{{ note.title }}</p></a>
+                    <a :href="note.original" target="_blank" @click.stop><p>{{ note.title }}</p></a>
                 </div>
     
                 <TagsBlock :tags="note.tags" :noteID="note.id" />
@@ -101,6 +120,7 @@ const openNote = (event: MouseEvent)=>{
                     </p>
                 </div>
             </div>
+
         </div>
 
 </template>
@@ -126,6 +146,10 @@ const openNote = (event: MouseEvent)=>{
 .scale-enter-from,
 .scale-leave-to {
     transform: scale(0);
+}
+
+.tags-picker {
+    @apply w-full flex flex-wrap gap-2 text-black
 }
 
 .note-card{

@@ -19,6 +19,7 @@ func New(tgClient *vk.VKClient) *External {
 }
 
 func (e *External) GetTgPhoto(photo *object.PhotosPhoto) (io.Reader, error) {
+
 	// Get the file URL
 	fileURL := photo.MaxSize().URL
 

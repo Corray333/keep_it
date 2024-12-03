@@ -6,9 +6,13 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"regexp"
+	"sort"
+	"strconv"
 
 	"github.com/Corray333/keep_it/parsers/vk/internal/entities"
+	"github.com/SevereCloud/vksdk/v3/api"
 	"github.com/SevereCloud/vksdk/v3/object"
 )
 
@@ -92,6 +96,23 @@ func (s *Service) ParseMessage(ctx context.Context, message *object.MessagesMess
 				note.CreatedAt = int64(attachment.Wall.Date)
 			}
 
+			groupID := strconv.Itoa(-attachment.Wall.FromID)
+
+			vk := api.NewVK(os.Getenv("VK_BOT_TOKEN"))
+
+			groupInfo, err := vk.GroupsGetByID(api.Params{
+				"group_id": groupID,
+			})
+			if err != nil {
+				slog.Error("Error getting group info: " + err.Error())
+				return err
+			}
+
+			if len(groupInfo.Groups) > 0 {
+				groupName := groupInfo.Groups[0].Name
+				note.Title = "Forwarded from " + groupName
+			}
+
 			for _, wallAttachment := range attachment.Wall.Attachments {
 				switch wallAttachment.Type {
 				case "photo":
@@ -157,33 +178,63 @@ func parseRichText(input string) (result entities.RichText) {
 	var meta []entities.Meta
 	offsetCorrection := 0
 
+	// Регулярка для скрытых гиперссылок
 	linkRegex := regexp.MustCompile(`\[(https?://[^\|]+)\|([^\]]+)\]`)
-	linkMatches := linkRegex.FindAllStringSubmatchIndex(input, -1)
-	for i := range linkMatches {
-		if i == 0 && linkMatches[i][0] > 0 {
-			result.PlainText += input[offsetCorrection:linkMatches[i][0]]
-		}
-		link := input[linkMatches[i][2]:linkMatches[i][3]]
-		text := input[linkMatches[i][4]:linkMatches[i][5]]
-		meta = append(meta, entities.Meta{
-			Offset: len([]rune(result.PlainText)) + 1,
-			Length: len([]rune(text)),
-			Link:   link,
-		})
+	// Регулярка для явных ссылок
+	plainLinkRegex := regexp.MustCompile(`\b(https?://[^\s]+|www\.[^\s]+)\b`)
 
-		result.PlainText += text
-		if i < len(linkMatches)-1 {
-			result.PlainText += input[linkMatches[i][1]:linkMatches[i+1][0]]
-		} else {
-			result.PlainText += input[linkMatches[i][1]:]
+	linkMatches := linkRegex.FindAllStringSubmatchIndex(input, -1)
+	plainLinkMatches := plainLinkRegex.FindAllStringSubmatchIndex(input, -1)
+
+	allMatches := append(linkMatches, plainLinkMatches...)
+
+	// Объединяем результаты поиска ссылок
+	sort.Slice(allMatches, func(i, j int) bool {
+		return allMatches[i][0] < allMatches[j][0]
+	})
+
+	for i := range allMatches {
+		match := allMatches[i]
+
+		// Добавляем текст до текущей ссылки, если он есть
+		if match[0] > offsetCorrection {
+			result.PlainText += input[offsetCorrection:match[0]]
 		}
+
+		// Проверяем количество групп в совпадении
+		if len(match) == 4 { // Явная ссылка
+			link := input[match[0]:match[1]]
+			meta = append(meta, entities.Meta{
+				Offset: len([]rune(result.PlainText)),
+				Length: len([]rune(link)),
+				Link:   link,
+			})
+			result.PlainText += link
+		} else if len(match) >= 6 { // Скрытая ссылка
+			link := input[match[2]:match[3]]
+			text := input[match[4]:match[5]]
+			meta = append(meta, entities.Meta{
+				Offset: len([]rune(result.PlainText)),
+				Length: len([]rune(text)),
+				Link:   link,
+			})
+			result.PlainText += text
+		}
+
+		// Устанавливаем новую позицию смещения
+		offsetCorrection = match[1]
 	}
 
+	// Добавляем оставшийся текст, если он есть
+	if offsetCorrection < len(input) {
+		result.PlainText += input[offsetCorrection:]
+	}
+
+	// Если метаинформации нет, весь текст — plainText
 	if len(meta) == 0 {
 		result.PlainText = input
 	}
 
-	// После обработки метаинформации оставшийся текст является plainText
 	result.Meta = meta
 
 	fmt.Printf("Result: %+v\n", result)

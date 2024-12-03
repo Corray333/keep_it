@@ -40,7 +40,7 @@ const toggleDone = () => {
 }
 
 .checkbox-wrapper{
-    @apply inline-block p-1;
+    @apply inline-block p-0.5;
 }
 
 path {

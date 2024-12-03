@@ -10,8 +10,9 @@ const props = defineProps<{
 
 <template>
     <div class="checkbox">
-        <CheckBox v-model="element.checked" disabled="true" class="inline" /> 
-        <span 
+        <CheckBox v-model="element.checked" :disabled="true" class="inline" /> 
+        <div v-if="element.rich_text?.meta">
+            <span
             v-for="(piece, i) of element.rich_text.meta" :key="i">
             <span
                 :style="{ color: piece.color, fontWeight: piece.weight }"
@@ -25,6 +26,7 @@ const props = defineProps<{
                 {{ element.rich_text.plain_text.substring(piece.offset + piece.length, element.rich_text.plain_text.length) }}
             </span>
         </span>
+        </div>
     </div>
 </template>
 
