@@ -117,7 +117,7 @@ func (c *NoteService) GetNotes(ctx context.Context, userID int64, offset int, fi
 			})
 		case "category":
 			newFilters = append(newFilters, helpers.Filter{
-				Field:     helpers.FilterKeyCategogy,
+				Field:     helpers.FilterKeyCategory,
 				Operation: "=",
 				Value:     values[0],
 			})

@@ -87,10 +87,8 @@ func (r *NoteRepository) GetNotes(ctx context.Context, userID int64, offset int,
 	for _, filter := range filters {
 		if filter.Field == helpers.FilterKeyTag {
 			tags = filter.Value.([]string)
-			break
-		} else if filter.Field == helpers.FilterKeyCategogy {
+		} else if filter.Field == helpers.FilterKeyCategory {
 			category = filter.Value.(string)
-			break
 		}
 	}
 	fmt.Println("Filters: ", filters)
@@ -100,8 +98,11 @@ func (r *NoteRepository) GetNotes(ctx context.Context, userID int64, offset int,
 	filteredNotes := sq.Select("n.note_id", "n.creator_id", "n.title", "n.source", "n.original", "n.icon",
 		"n.created_at", "n.copied_at", "n.type", "n.content", "n.cover", "n.checked", "n.category_id").
 		From("notes n").
-		Where(squirrel.Eq{"n.creator_id": userID}).
-		OrderBy("n.created_at DESC").
+		Where(squirrel.Eq{"n.creator_id": userID})
+	if category != "" {
+		filteredNotes = filteredNotes.Where(squirrel.Eq{"n.category_id": category})
+	}
+	filteredNotes = filteredNotes.OrderBy("n.created_at DESC").
 		Limit(10).
 		Offset(uint64(offset))
 
@@ -109,9 +110,6 @@ func (r *NoteRepository) GetNotes(ctx context.Context, userID int64, offset int,
 		filteredNotes = filteredNotes.
 			Join("note_tag nt ON n.note_id = nt.note_id").
 			Where(squirrel.Eq{"nt.tag_text": tags})
-	}
-	if category != "" {
-		filteredNotes = filteredNotes.Where(squirrel.Eq{"n.category_id": category})
 	}
 
 	// Outer query to fetch all associated tags for the filtered notes

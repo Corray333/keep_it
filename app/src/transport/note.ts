@@ -4,13 +4,15 @@ import { api, logError } from "./main"
 
 export class NoteTransport {
     getNotes = async (offset: number, tags: string[], category: string) : Promise<Note[]>=>{
-        let tagsFilter = ""
+        let filter = ""
         for (let i = 0; i < tags.length; i++) {
-            tagsFilter += `&tag=${tags[i]}`
+            filter += `&tag=${tags[i]}`
         }
-        if (category) tagsFilter += `&category=${category}`
+        if (category) filter += `&category=${category}`
+
+        console.log(filter)
         try {
-            const response = await api.get(`/notes?offset=${offset}${tagsFilter}`)
+            const response = await api.get(`/notes?offset=${offset}${filter}`)
             return response.data
         } catch (error) {
             logError(error)
