@@ -15,6 +15,7 @@ services:
     depends_on:
       - db
       - redis
+      - kafka
 
   authbot:
     build: 
@@ -66,7 +67,8 @@ services:
       - ./files:/app/files
     command: make run
     depends_on:
-      - db
+      - kafka
+      - api
 
   parser-vk:
     build: 
@@ -78,7 +80,8 @@ services:
       - ./files:/app/files
     command: make run
     depends_on:
-      - db
+      - kafka
+      - api
   
   app:
     image: node:latest

@@ -7,11 +7,13 @@ import ContentImage from './content/ContentImage.vue';
 import TagsBlock from './TagsBlock.vue';
 import ContentP from './content/ContentP.vue';
 
-import {  ref } from 'vue';
-import { Accordion, AccordionContent, AccordionHeader, AccordionPanel, Image as Img } from 'primevue';
+import {  onMounted, ref, watch } from 'vue';
+import { Accordion, AccordionContent, AccordionHeader, AccordionPanel, Image as Img, TreeSelect } from 'primevue';
 import { TimeFromUnix } from '@/helpers/time';
 import CheckBox from '../CheckBox.vue';
 import { adjustHexColor } from '@/helpers/color';
+import { useNotesStore } from '@/stores/notes';
+import { NoteService } from '@/service/note';
 
 
 const emit = defineEmits(['select-toggle'])
@@ -32,6 +34,24 @@ const openNote = ()=>{
     }
 }
 
+const noteService = new NoteService()
+
+const notesStore = useNotesStore()
+
+const categorySelected = ref()
+
+
+onMounted(()=>{
+    categorySelected.value = {}
+    if (props.note.categoryID)categorySelected.value[props.note.categoryID] = true
+})
+
+watch(categorySelected, (newVal) => {
+    let categoryID = ''
+    if (Object.keys(newVal).length>0) categoryID = Object.keys(newVal)[0]
+    if (categoryID == '') return
+    noteService.setNoteCategory(props.note.id, categoryID)
+})
 
 
 </script>
@@ -74,6 +94,7 @@ const openNote = ()=>{
                                                     <CloseIcon />
                                                 </span>
                                             </div>
+                                            <TreeSelect v-model="categorySelected" :options="notesStore.categories" placeholder="Category"/>
                                             <p>Copied at: {{ TimeFromUnix(note.copiedAt) }}</p>
                                             <p>Created at: {{ TimeFromUnix(note.createdAt) }}</p>
                                             <p>Source: {{ note.source }}</p>
@@ -201,6 +222,10 @@ const openNote = ()=>{
 }
 .note-page-content{
     @apply p-4 flex flex-col gap-2;
+}
+
+.note-page-header-more{
+    @apply flex flex-col gap-2
 }
 
 

@@ -61,14 +61,33 @@ const MyPreset = definePreset(Aura, {
             background: "var(--primary-bg)",
             color: "var(--invert-bg)",
             node:{
+                border:{
+                    radius: "999px"
+                },
                 color: "var(--invert-bg)",
                 toggle:{
                     button:{
                         color: "var(--invert-bg)",
+                        hover:{
+                            color: "var(--invert-bg)",
+                            background: "var(--secondary-bg)"
+                        }
                     }
+                },
+                hover:{
+                    background: "var(--secondary-bg)",
+                    color: "var(--invert-bg)",
+                },
+                selected:{
+                    background: "var(--secondary-bg)",
+                    color: "var(--invert-bg)",
                 }
             },
         }
+    },
+    treeselect: {
+        background: "var(--primary-bg)",
+        color: "var(--primary-bg)"
     }
 });
 

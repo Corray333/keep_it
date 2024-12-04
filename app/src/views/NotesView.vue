@@ -53,12 +53,12 @@ const offset = ref(0)
 
 const fetchNotes = async () => {
     undefineNotes()
-    notes.value = await noteService.getNotes(offset.value, pickedTags.value.map(tag => tag.text))
+    notes.value = await noteService.getNotes(offset.value, pickedTags.value.map(tag => tag.text), pickedCategory.value)
 }
 
-onBeforeMount(() => {
+onBeforeMount(async () => {
     undefineNotes()
-    fetchCategories()
+    await fetchCategories()
     fetchNotes()
 })
 
@@ -139,19 +139,31 @@ const allSelected = computed(()=>{
     return selectedNotes.value.length == notes.value.length
 })
 
-const categories = ref<Category[]>([])
 
 const fetchCategories = async () => {
-    categories.value = await CategoryService.getCategories()
+    notesStore.categories = await CategoryService.getCategories()
 }
 
 const newCategoryName = ref<string>('')
-const newCategoryParent = ref<string>('')
+const newCategoryParent = ref()
+
+const pickedCategory = ref('')
+
+watch(newCategoryParent, (newVal)=>{
+    if (Object.keys(newVal).length>0) {
+        pickedCategory.value = Object.keys(newVal)[0]
+        fetchNotes()
+    } else {
+        pickedCategory.value = ''
+        fetchNotes()
+    }
+    
+})
 
 const createCategory = async () => {
     if (!newCategoryName.value) return
     let parent = ''
-    if (Object.keys(newCategoryParent.value).length>0) parent = Object.keys(newCategoryParent.value)[0]
+    if (newCategoryParent.value && Object.keys(newCategoryParent.value).length>0) parent = Object.keys(newCategoryParent.value)[0]
     await CategoryService.createCategory(newCategoryName.value, parent)
     fetchCategories()
     closeNewCategoryDialog()
@@ -166,6 +178,7 @@ const openNewCategoryDialog = () => {
 const closeNewCategoryDialog = () => {
     showNewCategoryDialog.value = false
 }
+
 
 
 </script>
@@ -188,7 +201,7 @@ const closeNewCategoryDialog = () => {
                 <button @click="openNewCategoryDialog"><i class="pi pi-plus"></i></button>
             </div>
 
-            <Tree :value="categories" v-model:selection-keys="newCategoryParent" selection-mode="single" />
+            <Tree :value="notesStore.categories" v-model:selection-keys="newCategoryParent" selection-mode="single" class="w-fit min-w-64"/>
         </div>
 
         <div class="tags">

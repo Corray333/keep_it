@@ -16,7 +16,7 @@ type FilterKey string
 
 const (
 	FilterKeyTag       FilterKey = "tag"
-	FilterKeyCatelogy  FilterKey = "category"
+	FilterKeyCategogy  FilterKey = "category"
 	FilterKeyCreatedAt FilterKey = "createdAt"
 	FilterKeyCopiedAt  FilterKey = "copiedAt"
 )

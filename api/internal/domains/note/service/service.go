@@ -23,6 +23,7 @@ type repository interface {
 	CreateNote(ctx context.Context, note *entities.Note) (noteID string, err error)
 	GetNote(ctx context.Context, noteID string) (*entities.Note, error)
 	GetNotes(ctx context.Context, userID int64, offset int, filters []helpers.Filter) ([]entities.Note, error)
+	SetNoteCategory(ctx context.Context, userID int64, noteID string, categoryID string) error
 	DeleteNotes(ctx context.Context, userID int64, noteIDs []string) error
 
 	GetTags(ctx context.Context, userID int64) ([]entities.Tag, error)
@@ -114,6 +115,12 @@ func (c *NoteService) GetNotes(ctx context.Context, userID int64, offset int, fi
 				Operation: "IN",
 				Value:     values,
 			})
+		case "category":
+			newFilters = append(newFilters, helpers.Filter{
+				Field:     helpers.FilterKeyCategogy,
+				Operation: "=",
+				Value:     values[0],
+			})
 		}
 	}
 
@@ -176,4 +183,8 @@ func (c *NoteService) GetTags(ctx context.Context, userID int64) ([]entities.Tag
 
 func (c *NoteService) DeleteNotes(ctx context.Context, useID int64, noteIDs []string) error {
 	return c.repo.DeleteNotes(ctx, useID, noteIDs)
+}
+
+func (c *NoteService) SetNoteCategory(ctx context.Context, userID int64, noteID string, categoryID string) error {
+	return c.repo.SetNoteCategory(ctx, userID, noteID, categoryID)
 }

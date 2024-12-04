@@ -23,4 +23,12 @@
   --invert-bg-50: var(--light-50);
   --invert-bg-opacity: var(--light-opacity);
   --primary: var(--primary);
+
+  --p-treeselect-background: var(--primary-bg) !important;
+  --p-treeselect-focus-border-color: transparent !important;
+  --p-treeselect-border-color: var(--invert-bg-50) !important;
+  --p-overlay-select-border-color: transparent !important;
+  --p-treeselect-overlay-border-color: transparent !important;
+  --p-treeselect-color: var(--invert-bg) !important;
+  --p-treeselect-placeholder-color: var(--invert-bg) !important;
 }

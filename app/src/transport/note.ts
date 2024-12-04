@@ -3,11 +3,12 @@ import { api, logError } from "./main"
 
 
 export class NoteTransport {
-    getNotes = async (offset: number, tags: string[]) : Promise<Note[]>=>{
+    getNotes = async (offset: number, tags: string[], category: string) : Promise<Note[]>=>{
         let tagsFilter = ""
         for (let i = 0; i < tags.length; i++) {
             tagsFilter += `&tag=${tags[i]}`
         }
+        if (category) tagsFilter += `&category=${category}`
         try {
             const response = await api.get(`/notes?offset=${offset}${tagsFilter}`)
             return response.data
@@ -67,6 +68,16 @@ export class NoteTransport {
                 color: color,
                 isNew: isNew
             })
+            return true
+        } catch (error) {
+            logError(error)
+            return false
+        }
+    }
+
+    setNoteCategory = async (noteId: string, categoryiD: string) : Promise<boolean> =>{
+        try {
+            await api.put(`/notes/${noteId}/categories/${categoryiD}`)
             return true
         } catch (error) {
             logError(error)

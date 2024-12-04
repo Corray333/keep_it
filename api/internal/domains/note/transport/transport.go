@@ -29,6 +29,7 @@ type service interface {
 
 	GetNotes(ctx context.Context, userID int64, offset int, filters map[string][]string) ([]entities.Note, error)
 	GetNewNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error)
+	SetNoteCategory(ctx context.Context, userID int64, noteID string, categoryID string) error
 
 	GetTags(ctx context.Context, userID int64) ([]entities.Tag, error)
 	CreateTag(ctx context.Context, tag *entities.Tag) error
@@ -68,6 +69,8 @@ func (t *NoteTransport) RegisterRoutes() {
 		r.Get("/api/notes/new", t.getNewNotes)
 		r.Get("/api/notes/{note_id}", t.getNote)
 		r.Delete("/api/notes", t.deleteNote)
+
+		r.Put("/api/notes/{note_id}/categories/{category_id}", t.setNoteCategory)
 
 		r.Post("/api/tags", t.createTag)
 		r.Delete("/api/tags/{tagText}", t.deleteTag)
@@ -420,6 +423,29 @@ func (t *NoteTransport) deleteNote(w http.ResponseWriter, r *http.Request) {
 
 	if err := t.service.DeleteNotes(ctx, userID, noteIDs); err != nil {
 		slog.Error("failed to remove note: " + err.Error())
+		helpers.SendError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (t *NoteTransport) setNoteCategory(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := r.Context().Value(helpers.CtxUserIDKey).(int64)
+	if !ok {
+		http.Error(w, "user id not found in context", http.StatusInternalServerError)
+		slog.Error("user id not found in context")
+		return
+	}
+
+	noteID := chi.URLParam(r, "note_id")
+	categoryID := chi.URLParam(r, "category_id")
+
+	err := t.service.SetNoteCategory(ctx, userID, noteID, categoryID)
+	if err != nil {
+		slog.Error("failed to set note category: " + err.Error())
 		helpers.SendError(w, err)
 		return
 	}

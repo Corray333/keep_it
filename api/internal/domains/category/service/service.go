@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/Corray333/keep_it/internal/domains/category/entities"
@@ -52,34 +53,32 @@ func (s *CategoryService) GetCategories(ctx context.Context, userID int64) ([]en
 		return nil, err
 	}
 
-	categoryMap := make(map[string]*entities.Category)
+	categoryMap := make(map[string][]entities.Category)
+
+	var result []entities.Category
+
 	for i := range categories {
-		categoryMap[categories[i].ID] = &categories[i]
-	}
-
-	// Создаем список корневых категорий
-	var rootCategories []*entities.Category
-
-	// Строим дерево
-	for i := range categories {
-		category := &categories[i]
-
-		if category.ParentCategoryID == nil {
-			// Если у категории нет родителя, добавляем ее в корневые
-			rootCategories = append(rootCategories, category)
+		if categories[i].ParentCategoryID == nil {
+			result = append(result, categories[i])
 		} else {
-			// Если есть родитель, добавляем в его дочерние категории
-			parent, exists := categoryMap[*category.ParentCategoryID]
-			if exists {
-				parent.ChildrenCategories = append(parent.ChildrenCategories, *category)
-			}
+			parentCategoryChildren := categoryMap[*categories[i].ParentCategoryID]
+
+			parentCategoryChildren = append(parentCategoryChildren, categories[i])
+			categoryMap[*categories[i].ParentCategoryID] = parentCategoryChildren
 		}
 	}
 
-	result := []entities.Category{}
-	for i := range rootCategories {
-		result = append(result, *rootCategories[i])
-	}
+	s.assignChildren(result, categoryMap)
+
+	fmt.Printf("Root categories: %+v\n", result)
 
 	return result, nil
+}
+
+func (s *CategoryService) assignChildren(categories []entities.Category, categoryMap map[string][]entities.Category) {
+	for i := range categories {
+		children := categoryMap[categories[i].ID]
+		categories[i].ChildrenCategories = children
+		s.assignChildren(children, categoryMap)
+	}
 }

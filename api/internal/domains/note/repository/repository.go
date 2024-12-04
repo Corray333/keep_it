@@ -83,9 +83,13 @@ func (r *NoteRepository) GetNotes(ctx context.Context, userID int64, offset int,
 	sq := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 
 	tags := []string{}
+	category := ""
 	for _, filter := range filters {
 		if filter.Field == helpers.FilterKeyTag {
 			tags = filter.Value.([]string)
+			break
+		} else if filter.Field == helpers.FilterKeyCategogy {
+			category = filter.Value.(string)
 			break
 		}
 	}
@@ -105,6 +109,9 @@ func (r *NoteRepository) GetNotes(ctx context.Context, userID int64, offset int,
 		filteredNotes = filteredNotes.
 			Join("note_tag nt ON n.note_id = nt.note_id").
 			Where(squirrel.Eq{"nt.tag_text": tags})
+	}
+	if category != "" {
+		filteredNotes = filteredNotes.Where(squirrel.Eq{"n.category_id": category})
 	}
 
 	// Outer query to fetch all associated tags for the filtered notes
@@ -162,18 +169,19 @@ func (r *NoteRepository) GetNotes(ctx context.Context, userID int64, offset int,
 			})
 		} else {
 			notes = append(notes, entities.Note{
-				ID:        noteInternal.NoteID,
-				CreatorID: noteInternal.CreatorID,
-				Title:     noteInternal.Title,
-				Source:    noteInternal.Source,
-				Original:  noteInternal.Original,
-				Icon:      noteInternal.Icon,
-				CreatedAt: noteInternal.CreatedAt,
-				CopiedAt:  noteInternal.CopiedAt,
-				Type:      noteInternal.Type,
-				Content:   noteInternal.Content,
-				Cover:     noteInternal.Cover,
-				Checked:   noteInternal.Checked,
+				ID:         noteInternal.NoteID,
+				CreatorID:  noteInternal.CreatorID,
+				Title:      noteInternal.Title,
+				Source:     noteInternal.Source,
+				Original:   noteInternal.Original,
+				Icon:       noteInternal.Icon,
+				CreatedAt:  noteInternal.CreatedAt,
+				CopiedAt:   noteInternal.CopiedAt,
+				Type:       noteInternal.Type,
+				Content:    noteInternal.Content,
+				Cover:      noteInternal.Cover,
+				Checked:    noteInternal.Checked,
+				CategoryId: noteInternal.CategoryID,
 			})
 			if noteInternal.TagText != nil {
 				notes[len(notes)-1].Tags = append(notes[len(notes)-1].Tags, entities.Tag{
@@ -298,6 +306,28 @@ func (r *NoteRepository) AddTagToNote(ctx context.Context, tag *entities.Tag, no
 	fmt.Printf("tag: %v\n", tag)
 
 	if _, err := tx.Exec("INSERT INTO note_tag (note_id, tag_text, owner_id) VALUES ($1, $2, $3)", noteID, tag.Text, tag.Owner); err != nil {
+		return err
+	}
+
+	if isNew {
+		if err := tx.Commit(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *NoteRepository) SetNoteCategory(ctx context.Context, userID int64, noteID string, categoryID string) error {
+	tx, isNew, err := r.GetTx(ctx)
+	if err != nil {
+		return err
+	}
+	if isNew {
+		defer tx.Rollback()
+	}
+
+	if _, err := tx.Exec("UPDATE notes SET category_id = $1 WHERE note_id = $2 AND creator_id = $3", categoryID, noteID, userID); err != nil {
 		return err
 	}
 

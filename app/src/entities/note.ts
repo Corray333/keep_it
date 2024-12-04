@@ -11,7 +11,7 @@ export interface Note {
     copiedAt: number
     type: number
     checked: boolean
-    categoryId?: string
+    categoryID?: string
     icon: Icon
 }
 

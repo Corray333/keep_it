@@ -3,8 +3,8 @@ import { NoteTransport } from "@/transport/note"
 
 export class NoteService {
     noteTransport = new NoteTransport()
-    getNotes = async (offset: number, tags: string[]) : Promise<Note[]>=>{
-        return await this.noteTransport.getNotes(offset, tags)
+    getNotes = async (offset: number, tags: string[], category: string) : Promise<Note[]>=>{
+        return await this.noteTransport.getNotes(offset, tags, category)
     }
 
     deleteNotes = async (noteIDs: string[]) : Promise<boolean>=>{
@@ -29,5 +29,9 @@ export class NoteService {
 
     addTagToNote = async (noteId: string, tagText: string, color: string, isNew: boolean) : Promise<boolean> =>{
         return await this.noteTransport.addTagToNote(noteId, tagText, color, isNew)
+    }
+
+    setNoteCategory = async (noteId: string, categoryID: string) : Promise<boolean> =>{
+        return await this.noteTransport.setNoteCategory(noteId, categoryID)
     }
 }
