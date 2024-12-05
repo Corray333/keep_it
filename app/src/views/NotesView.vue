@@ -4,7 +4,6 @@ import CheckBox from '@/components/CheckBox.vue';
 import CloseIcon from '@/components/icons/close-icon.vue';
 import NoteCard from '@/components/note/NoteCard.vue';
 import NoteCardSkeleton from '@/components/note/NoteCardSkeleton.vue';
-import type { Category } from '@/entities/category';
 import { NoteTemplate, type Note, type Tag } from '@/entities/note';
 import { adjustHexColor } from '@/helpers/color';
 import { CategoryService } from '@/service/category';
@@ -12,6 +11,15 @@ import { NoteService } from '@/service/note';
 import { useNotesStore } from '@/stores/notes';
 import { ContextMenu, Dialog, Toolbar, Tree } from 'primevue';
 import { computed, onBeforeMount, ref, watch } from 'vue';
+
+import { useI18n } from 'vue-i18n'
+import { loadLocaleMessages } from '@/i18n'
+
+const { t, locale } = useI18n()
+
+onBeforeMount(() => {
+    loadLocaleMessages(locale.value, 'notes')
+})
 
 const noteService = new NoteService()
 
@@ -184,20 +192,20 @@ const closeNewCategoryDialog = () => {
 </script>
 
 <template>
-    <Dialog v-model:visible="showNewCategoryDialog" modal header="New category" >
+    <Dialog v-model:visible="showNewCategoryDialog" modal :header="t('newCategory.header')" >
         <input v-model="newCategoryName" type="text" placeholder="Category name">
         <div class="flex gap-2">
-            <button class="button" @click="closeNewCategoryDialog">Cancel</button>
-            <button class="button" @click="createCategory">Create</button>
+            <button class="button-2" @click="closeNewCategoryDialog"> {{ t('newCategory.cancel') }} </button>
+            <button class="button-1" @click="createCategory"> {{ t('newCategory.create') }} </button>
         </div>
     </Dialog>
 
     <section class="notes-page">
-        <h1>Notes</h1>
+        <h1>{{ t('header') }}</h1>
 
         <div class="category">
             <div class="flex gap-2 items-center w-fit">
-                <h2>Categories</h2>
+                <h2>{{ t('categories') }}</h2>
                 <button @click="openNewCategoryDialog"><i class="pi pi-plus"></i></button>
             </div>
 
@@ -205,7 +213,7 @@ const closeNewCategoryDialog = () => {
         </div>
 
         <div class="tags">
-            <h2>Tags</h2>
+            <h2>{{ t('tags') }}</h2>
             <div class="tags-picker">
                 <span class="select-tag" v-for="(tag, i) of pickedTags" :key="i" @click="unpickTag(tag.text)"
                     :style="{ backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40) }">
@@ -222,7 +230,7 @@ const closeNewCategoryDialog = () => {
         <div class="home-body">
             <Toolbar>
                 <template #start>
-                    <button @click="selectAllToggle" class=" flex text-invert-bg items-center gap-2"><CheckBox :model-value="allSelected" disabled/>Select all</button>
+                    <button @click="selectAllToggle" class=" flex text-invert-bg items-center gap-2"><CheckBox :model-value="allSelected" disabled/>{{ t('controls.selectAll') }}</button>
                 </template>
 
                 <template #end>
@@ -267,7 +275,7 @@ const closeNewCategoryDialog = () => {
 
 
 .notes-page {
-    @apply flex flex-col gap-4 p-4 xl:p-8 xl:px-16
+    @apply flex flex-col gap-4 p-4 xl:p-8 w-full
 }
 
 .home-body {

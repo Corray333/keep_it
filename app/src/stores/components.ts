@@ -15,6 +15,11 @@ export const useComponentsStore = defineStore('components', () => {
     }, showMessageTime)
   }
 
+  const lang = ref<string>('en')
+  const setLang = (newLang: string) => {
+    lang.value = newLang
+  }
+
   const newError = (error?: string) =>{
     if (error == undefined){
       error = "Unknown error"
@@ -25,5 +30,5 @@ export const useComponentsStore = defineStore('components', () => {
     })
   }
 
-  return { messages, newMessage, newError }
+  return { messages, newMessage, newError, lang, setLang }
 })

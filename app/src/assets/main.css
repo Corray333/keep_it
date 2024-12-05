@@ -94,7 +94,15 @@
   }
 
   .button{
-    @apply bg-secondary-bg p-2 rounded-full w-full text-invert-bg min-w-10 flex justify-center items-center min-h-10 hover:bg-invert-bg hover:text-secondary-bg duration-300
+    @apply p-2 rounded-full w-full text-invert-bg min-w-10 flex justify-center items-center min-h-10 duration-300 
+  }
+
+  .button-1{
+    @apply button bg-secondary-bg hover:bg-invert-bg hover:text-secondary-bg
+  }
+
+  .button-2{
+    @apply button bg-transparent hover:bg-invert-bg hover:text-secondary-bg;
   }
   /* .select-tag>*{
     mix-blend-mode: color-dodge;
@@ -134,4 +142,14 @@
   max-width: 100vw;
   max-height: 100vh;
   padding: 1rem;
+}
+
+.p-dialog{
+  background-color: var(--primary-bg) !important;
+  color: var(--invert-bg) !important;
+}
+.p-dialog-content{
+  gap: 0.5rem !important;
+  display: flex;
+  flex-direction: column;
 }

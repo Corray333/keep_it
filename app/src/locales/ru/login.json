@@ -1,0 +1,43 @@
+{
+    "loginBtn":"Log in",
+    "continueBtn":"Continue",
+    "usernamePage":{
+        "title":"Hi ✌️ Who are you?",
+        "usernameOrEmail":"username or email",
+        "continue":"Continue",
+        "logInUsing":"or log in using "
+    },
+    "registerPage":{
+        "title":"Sorry, I don't know\nwho you are😑",
+        "username":"username",
+        "password":"password",
+        "repeatPassword":"repeat password"
+    },
+    "loginPage":{
+        "title":"Welcome back✌️",
+        "password":"password"
+    },
+    "ref":{
+        "title":"You are invited by friend? Enter his referal code to get bonuses 😎",
+        "refCode":"referal code"
+    },
+    "verify":{
+        "title":"We need to verify\nyour account 🔍",
+        "useEmail":"use email",
+        "useTg":"use telegram"
+    },
+    "verifyCode":{
+        "title":"Enter verification code ✅"
+    },
+    "verifyTelegram":{
+        "scanQR":"Scan QR code",
+        "useLink":"or use this link"
+    },
+    "passwordReqs":{
+        "lowercase":"At least one lowercase letter",
+        "uppercase":"At least one uppercase letter",
+        "digit":"At least one digit",
+        "minLength":"At least 8 characters",
+        "maxLength":"No more than 32 characters"
+    }
+}

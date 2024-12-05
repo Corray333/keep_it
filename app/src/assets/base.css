@@ -22,7 +22,6 @@
   --invert-bg: var(--light);
   --invert-bg-50: var(--light-50);
   --invert-bg-opacity: var(--light-opacity);
-  --primary: var(--primary);
 
   --p-treeselect-background: var(--primary-bg) !important;
   --p-treeselect-focus-border-color: transparent !important;

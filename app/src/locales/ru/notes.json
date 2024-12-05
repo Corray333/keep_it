@@ -1,0 +1,20 @@
+{
+    "header":"Заметки",
+    "categories":"Категории",
+    "category":"Категория",
+    "newCategory":{
+        "header":"Новая категория",
+        "cancel":"Отмена",
+        "create":"Создать"
+    },
+    "tags":"Тэги",
+    "tag":"Тэг",
+    "controls":{
+        "selectAll":"Выбрать все"
+    },
+    "properties":{
+        "createdAt":"Дата создания",
+        "copiedAt":"Дата сохранения",
+        "source":"Источник"
+    }
+}

@@ -7,13 +7,22 @@ import ContentImage from './content/ContentImage.vue';
 import TagsBlock from './TagsBlock.vue';
 import ContentP from './content/ContentP.vue';
 
-import {  onMounted, ref, watch } from 'vue';
+import {  onBeforeMount, onMounted, ref, watch } from 'vue';
 import { Accordion, AccordionContent, AccordionHeader, AccordionPanel, Image as Img, TreeSelect } from 'primevue';
 import { TimeFromUnix } from '@/helpers/time';
 import CheckBox from '../CheckBox.vue';
 import { adjustHexColor } from '@/helpers/color';
 import { useNotesStore } from '@/stores/notes';
 import { NoteService } from '@/service/note';
+
+import { useI18n } from 'vue-i18n'
+import { loadLocaleMessages } from '@/i18n'
+
+const { t, locale } = useI18n()
+
+onBeforeMount(() => {
+    loadLocaleMessages(locale.value, 'notes')
+})
 
 
 const emit = defineEmits(['select-toggle'])
@@ -95,9 +104,9 @@ watch(categorySelected, (newVal) => {
                                                 </span>
                                             </div>
                                             <TreeSelect v-model="categorySelected" :options="notesStore.categories" placeholder="Category"/>
-                                            <p>Copied at: {{ TimeFromUnix(note.copiedAt) }}</p>
-                                            <p>Created at: {{ TimeFromUnix(note.createdAt) }}</p>
-                                            <p>Source: {{ note.source }}</p>
+                                            <p v-if="note.createdAt">{{ t('properties.createdAt') }}: {{ TimeFromUnix(note.createdAt) }}</p>
+                                            <p>{{ t('properties.copiedAt') }}: {{ TimeFromUnix(note.copiedAt) }}</p>
+                                            <p>{{ t('properties.source') }}: {{ note.source }}</p>
                                         </div>
                                     </AccordionContent>
                                 </AccordionPanel>

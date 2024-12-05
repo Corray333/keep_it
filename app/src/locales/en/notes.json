@@ -1,0 +1,20 @@
+{
+    "header":"Notes",
+    "categories":"Categories",
+    "category":"Category",
+    "newCategory":{
+        "header":"New category",
+        "cancel":"Cancel",
+        "create":"Create"
+    },
+    "tags":"Tags",
+    "tag":"Tag",
+    "controls":{
+        "selectAll":"Select All"
+    },
+    "properties":{
+        "createdAt":"Created at",
+        "copiedAt":"Copied at",
+        "source":"Source"
+    }
+}
