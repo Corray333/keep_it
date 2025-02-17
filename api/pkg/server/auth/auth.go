@@ -33,6 +33,7 @@ func NewAuthMiddleware() func(next http.Handler) http.Handler {
 				return
 			}
 
+			fmt.Printf("ID: %d", creds.ID)
 			r = r.WithContext(context.WithValue(r.Context(), helpers.CtxUserIDKey, creds.ID))
 			next.ServeHTTP(w, r)
 		}
@@ -54,6 +55,7 @@ func Verify(hashed, password string) bool {
 
 // CreateToken creates a new JWT token by the email
 func CreateToken(id int64, lifeTime time.Duration) (string, error) {
+	fmt.Printf("Creating token: %d", id)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"id":  id,

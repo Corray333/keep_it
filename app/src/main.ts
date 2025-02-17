@@ -54,7 +54,8 @@ const MyPreset = definePreset(Aura, {
         toolbar:{
             background: "var(--primary-bg)",
             border: {
-                radius: "1rem"
+                radius: "1rem",
+                width:"4px"
             }
         },
         tree:{

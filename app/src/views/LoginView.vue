@@ -222,11 +222,11 @@ const componentsStore = useComponentsStore()
                 <div class="content">
                     <h3>{{ t('usernamePage.title') }}</h3>
                     <input v-model="username" type="text" :placeholder="t('usernamePage.usernameOrEmail')">
-                    <button @click="checkUsername" class="button">{{ t('continueBtn') }}</button>
-                    <span class="flex items-center gap-2">
+                    <button @click="checkUsername" class="button-1">{{ t('continueBtn') }}</button>
+                    <!-- <span class="flex items-center gap-2">
                         <p>{{ t('usernamePage.logInUsing') }}</p>
                         <GoogleIcon @click="componentsStore.newError()" class=" text-xl text-active" />
-                    </span>
+                    </span> -->
                 </div>
             </div>
 
@@ -268,10 +268,10 @@ const componentsStore = useComponentsStore()
                     <h3 class="whitespace-pre-line">{{ t('verify.title') }}</h3>
 
                     <div class="verify-row">
-                        <div class="verify-email text-active">
+                        <!-- <div class="verify-email text-active">
                             <EmailIcon class="text-4xl" />
                             <p>use email</p>
-                        </div>
+                        </div> -->
 
                         <div @click="generateTgCode" class="verify-telegram text-active">
                             <TelegramIcon class="text-4xl" />

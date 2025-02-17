@@ -1,5 +1,7 @@
 import type { User } from "@/entities/user"
 import { api, logError } from "./main"
+import { useAccountStore } from "@/stores/account"
+import axios from "axios"
 
 interface SignUpResponse {
     authorization: string
@@ -7,7 +9,7 @@ interface SignUpResponse {
 }
 
 export class UserTransport {
-    findUserLogin = async (checkStr: string) : Promise<User|null>=>{
+    static findUserLogin = async (checkStr: string) : Promise<User|null>=>{
         try {
             const response = await api.post('/users/login-find', {
                 checkStr: checkStr
@@ -20,7 +22,7 @@ export class UserTransport {
         }
     }
 
-    signUp = async (username: string, password: string, code: string) : Promise<SignUpResponse | null> =>{
+    static signUp = async (username: string, password: string, code: string) : Promise<SignUpResponse | null> =>{
         try {
             const {data} = await api.post('/auth/signup', {
                 username: username,
@@ -37,7 +39,7 @@ export class UserTransport {
         }
     }
 
-    logIn = async (username: string, password: string, code: string) : Promise<SignUpResponse | null> =>{
+    static logIn = async (username: string, password: string, code: string) : Promise<SignUpResponse | null> =>{
         try {
             const {data} = await api.post('/auth/login', {
                 username: username,
@@ -54,7 +56,18 @@ export class UserTransport {
         }
     }
 
-    codeExists = async (username: string, syn: number) : Promise<boolean> =>{
+    static renewTokens = async ()=>{
+        try {
+            const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/auth/renew-tokens`, {}, {
+                withCredentials: true
+            })
+            useAccountStore().setAuthorization(data.authorization)
+        } catch(error){
+            console.log(error)
+        }
+    }
+
+    static codeExists = async (username: string, syn: number) : Promise<boolean> =>{
         try {
             const response = await api.post('/auth/code-exists', {
                 username: username,

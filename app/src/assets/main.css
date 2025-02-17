@@ -153,3 +153,16 @@
   display: flex;
   flex-direction: column;
 }
+
+.p-select{
+  background-color: var(--primary-bg) !important;
+}
+.p-select.p-focus{
+  border-color: var(--invert-bg) !important;
+}
+.p-select-option.p-select-option-selected{
+  background-color: var(--secondary-bg) !important;
+}
+.p-tree-node-content.p-tree-node-selected .p-tree-node-toggle-button:hover{
+  color: var(--invert-bg) !important;
+}

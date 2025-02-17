@@ -50,8 +50,7 @@ func New(repo repository, userService userService) *NoteService {
 	return s
 }
 
-func (s *NoteService) Run() {
-}
+func (s *NoteService) Run() {}
 
 func (c *NoteService) GetNoteByID(ctx context.Context, userID int64, noteID string) (*entities.Note, error) {
 	note, err := c.repo.GetNote(ctx, noteID)

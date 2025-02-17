@@ -29,7 +29,7 @@ watch(selectedLang, (newVal) => {
     <section class="home">
         <h1 class="text-4xl font-bold text-secondary-bg">Profile</h1>
         
-        <Select :options="langs" option-label="name" v-model="selectedLang"/>
+        <Select :options="langs" option-label="name" v-model="selectedLang" />
 
     </section>
 </template>

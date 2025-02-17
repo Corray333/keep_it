@@ -110,7 +110,6 @@ services:
       - 80:80
     volumes:
       - ./configs/nginx/nginx-local.conf:/etc/nginx/nginx.conf
-      - ./app/dist:/usr/share/nginx/html
       - ./files:/usr/share/nginx/files
       - ./static:/usr/share/nginx/static
     depends_on:

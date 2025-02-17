@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"github.com/Corray333/keep_it/internal/domains/user/entities"
@@ -104,10 +105,21 @@ func (s *UserRepository) RenewTokens(ctx context.Context, userID int64, oldRefre
 		defer tx.Rollback()
 	}
 
-	_, err = tx.Exec(`UPDATE user_token SET token = $1, expires_at = $2 WHERE user_id = $3 AND token = $4;`, newRefreshToken, expiresAt, userID, oldRefreshToken)
+	res, err := tx.Exec(`UPDATE user_token SET token = $1, expires_at = $2 WHERE user_id = $3 AND token = $4;`, newRefreshToken, expiresAt, userID, oldRefreshToken)
 	if err != nil {
 		slog.Error("error updating refresh token: " + err.Error())
 		return err
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		slog.Error("error while getting rows affected updating tokens: " + err.Error())
+		return err
+	}
+
+	if affected != 1 {
+		slog.Error("number of rows affected by updating tokens is not 1")
+		return errors.New("number of rows affected by updating tokens is not 1")
 	}
 
 	if isNew {

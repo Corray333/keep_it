@@ -129,7 +129,8 @@ func (s *Service) ParseMessage(ctx context.Context, message *tgbotapi.Message) e
 				finalNote.ContentDecoded = append(finalNote.ContentDecoded, entities.ImgElement{
 					Type:  entities.ElementTypeImage,
 					Src:   notes[i].Cover,
-					Width: 100,
+					Width: 50,
+					Align: "center",
 				})
 			}
 		}

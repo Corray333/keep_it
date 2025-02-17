@@ -173,6 +173,7 @@ const createCategory = async () => {
     let parent = ''
     if (newCategoryParent.value && Object.keys(newCategoryParent.value).length>0) parent = Object.keys(newCategoryParent.value)[0]
     await CategoryService.createCategory(newCategoryName.value, parent)
+    newCategoryName.value = ''
     fetchCategories()
     closeNewCategoryDialog()
 }
@@ -266,6 +267,7 @@ const closeNewCategoryDialog = () => {
 
 .p-toolbar{
     background: var(--primary-bg) !important;
+    border-width: 2px !important;
 }
 
 </style>

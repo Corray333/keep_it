@@ -20,7 +20,7 @@ api.interceptors.request.use((config: CustomAxiosRequestConfig) => {
     if (config.useAuth) {
         const token = useAccountStore().authorization   
         if (token) {
-        config.headers['Authorization'] = `Bearer ${token}`
+            config.headers['Authorization'] = `Bearer ${token}`
         }
     }
     return config

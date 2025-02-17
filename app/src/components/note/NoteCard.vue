@@ -17,6 +17,7 @@ import { NoteService } from '@/service/note';
 
 import { useI18n } from 'vue-i18n'
 import { loadLocaleMessages } from '@/i18n'
+import CloseIcon from '../icons/close-icon.vue';
 
 const { t, locale } = useI18n()
 
@@ -129,13 +130,10 @@ watch(categorySelected, (newVal) => {
 
         <div @click="openNote" class="note-card">
             <div class="note-card-header">
-                <div class="note-card-header-label">
-                    <CheckBox v-if="selectable" :model-value="selected" :disabled="false" />
-                    <NoteIcon :icon="note.icon.data" />
-                    <a :href="note.original" target="_blank" @click.stop><p>{{ note.title }}</p></a>
-                </div>
-    
-                <TagsBlock :tags="note.tags" :noteID="note.id" />
+                <CheckBox v-if="selectable" :model-value="selected" :disabled="false" />
+                <NoteIcon :icon="note.icon.data" />
+                <a :href="note.original" target="_blank" @click.stop><p>{{ note.title }}</p></a>
+                <TagsBlock :tags="note.tags" :noteID="note.id" class=" justify-end" />
             </div>
     
             <div class="note-card-body">
@@ -189,7 +187,8 @@ watch(categorySelected, (newVal) => {
 }
 
 .note-card-header{
-    @apply p-4 border-b-2 border-invert-bg-50 flex items-center justify-between;
+    @apply p-4 border-b-2 border-invert-bg-50 grid gap-2 items-center;
+    grid-template-columns: auto auto 1fr auto;  
 }
 
 .note-card-body{
@@ -200,11 +199,8 @@ watch(categorySelected, (newVal) => {
     @apply w-28 h-28 object-cover aspect-square rounded-lg;
 }
 
-.note-card-header-label{
-    @apply flex gap-2 font-medium w-full
-}
 
-.note-card-header-label p, .note-card-header-label a{
+.note-card-header p, .note-card-header a{
     @apply overflow-hidden whitespace-nowrap text-ellipsis text-nowrap
 }
 

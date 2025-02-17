@@ -12,6 +12,13 @@
   --light-50: #8a8a8a;
   --light-opacity: rgba(249, 249, 249, 0.1);
 
+  /* --dark: #ffffff;
+  --half-dark: #e1e1e1;
+  --primary: #FFC555;
+  --light: #141414;
+  --light-50: #2d2d2d;
+  --light-opacity: rgba(249, 249, 249, 0.1); */
+
   --correct: #5ddf5d;
   --error: #ff5d5d;
   --warning: #ffcc00;
