@@ -1,43 +1,69 @@
 package files
 
 import (
+	"bytes"
+	"context"
+	"errors"
+	"log/slog"
 	"os"
 	"time"
 
-	"math/rand"
+	"github.com/Corray333/keep_it/internal/errs"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/spf13/viper"
 )
 
 type FileManager struct {
+	client        *s3.Client
+	presignClient *s3.PresignClient
 }
 
-func New() *FileManager {
-	return &FileManager{}
-}
-
-func generateRandomString(length int) string {
-	randomizer := rand.New(rand.NewSource(time.Now().UnixNano()))
-	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = letters[randomizer.Intn(len(letters))]
-	}
-	return string(b)
-}
-
-func (f *FileManager) UploadImage(file []byte, name string) (string, error) {
-	filePath := os.Getenv("FILE_PATH") + "/images/" + name + generateRandomString(10) + ".png"
-	newFile, err := os.Create(filePath)
+func NewFileManager() *FileManager {
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion(viper.GetString("s3.region")),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(os.Getenv("S3_ACCESS_KEY"), os.Getenv("S3_SECRET_KEY"), "")),
+	)
 	if err != nil {
-		return "", err
+		slog.Error("Error loading default config", "error", err)
+		panic(err)
 	}
 
-	defer newFile.Close()
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(viper.GetString("s3.endpoint"))
+	})
 
-	_, err = newFile.Write(file)
+	return &FileManager{
+		client:        client,
+		presignClient: s3.NewPresignClient(client),
+	}
+}
+
+func (f *FileManager) SaveFile(ctx context.Context, file []byte, name string) error {
+
+	_, err := f.client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket: aws.String(viper.GetString("s3.bucket")),
+		Key:    aws.String(name),
+		Body:   bytes.NewReader(file),
+	})
 	if err != nil {
-		return "", err
+		slog.Error("Error uploading file to S3", "error", err)
+		return errors.Join(errs.ErrUploadingFile, err)
 	}
 
-	return filePath, nil
+	return nil
+}
 
+func (f *FileManager) GetFileURL(ctx context.Context, name string) (string, error) {
+	presignedURL, err := f.presignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
+		Bucket: aws.String(viper.GetString("s3.bucket")),
+		Key:    aws.String(name),
+	}, s3.WithPresignExpires(time.Duration(viper.GetInt("s3.file_lifetime"))*time.Minute))
+	if err != nil {
+		return "", errors.Join(errs.ErrGettingFile, err)
+	}
+
+	return presignedURL.URL, nil
 }
