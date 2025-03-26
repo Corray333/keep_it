@@ -16,7 +16,7 @@ type UserController struct {
 
 func NewUserController(router *chi.Mux, store *storage.Storage) *UserController {
 	repo := repository.New(store)
-	service := service.New(repo)
+	service := service.New(service.WithRepository(repo))
 	transport := transport.New(router, service)
 
 	return &UserController{

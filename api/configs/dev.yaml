@@ -3,3 +3,8 @@ server:
 auth:
   access_token_lifetime: "10m"
   refresh_token_lifetime: "1000h"
+s3:
+  bucket: "25e31c53-3cc5b491-eba0-43f0-91f4-a56a3b565693"
+  file_lifetime: 15 # minutes
+  region: "ru-1"
+  endpoint: "https://s3.timeweb.cloud"

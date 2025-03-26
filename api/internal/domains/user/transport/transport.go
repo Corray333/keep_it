@@ -23,7 +23,8 @@ type service interface {
 	SignUp(ctx context.Context, user entities.User, code string) (userID int64, accessToken string, refreshToken string, err error)
 	LogIn(ctx context.Context, user *entities.User, code string) (fullUser *entities.User, accessToken string, refreshToken string, err error)
 	RenewTokens(ctx context.Context, userID int64, oldRefreshToken string) (accessToken, refreshToken string, err error)
-	FindUserByUsernameOrEmail(ctx context.Context, checkStr string) (user *entities.User, err error)
+
+	GetUser(ctx context.Context, searchUser *entities.User) (*entities.User, error)
 
 	CodeExists(ctx context.Context, username string, syn int64) (bool, error)
 }
@@ -238,7 +239,10 @@ func (t *UserTransport) findUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := t.service.FindUserByUsernameOrEmail(ctx, req.CheckStr)
+	user, err := t.service.GetUser(ctx, &entities.User{
+		Username: req.CheckStr,
+		Email:    req.CheckStr,
+	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			respondJSON(w, nil)

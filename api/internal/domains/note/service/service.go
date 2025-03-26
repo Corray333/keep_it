@@ -34,7 +34,7 @@ type repository interface {
 }
 
 type userService interface {
-	GetUserByTelegramID(ctx context.Context, telegramID int64) (*user_entities.User, error)
+	GetUser(ctx context.Context, searchUser *user_entities.User) (*user_entities.User, error)
 }
 
 type NoteService struct {
@@ -81,7 +81,9 @@ func (c *NoteService) CreateNote(ctx context.Context, note *entities.NewNoteMess
 			return "", err
 		}
 
-		user, err := c.GetUserByTelegramID(ctx, int64(userID))
+		user, err := c.GetUser(ctx, &user_entities.User{
+			TelegramID: int64(userID),
+		})
 		if err != nil {
 			return "", err
 		}

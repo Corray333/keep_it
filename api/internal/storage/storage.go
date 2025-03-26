@@ -23,6 +23,13 @@ type Storage struct {
 	Redis *redis.Client
 }
 
+type Transactioner interface {
+	Begin(ctx context.Context) (context.Context, error)
+	Commit(ctx context.Context) error
+	Rollback(ctx context.Context) error
+	GetTx(ctx context.Context) (tx *sqlx.Tx, isNew bool, err error)
+}
+
 func New() (*Storage, error) {
 	dbName := os.Getenv("POSTGRES_DB_NAME")
 	dbPassword := os.Getenv("POSTGRES_PASSWORD")

@@ -10,11 +10,7 @@ import (
 	"github.com/Corray333/keep_it/internal/domains/note"
 	"github.com/Corray333/keep_it/internal/domains/user"
 	"github.com/Corray333/keep_it/internal/storage"
-	"github.com/Corray333/keep_it/pkg/server/logger"
-	"github.com/go-chi/chi/v5"
-	"github.com/rs/cors"
 	"github.com/spf13/viper"
-	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 type controller interface {
@@ -29,26 +25,6 @@ type App struct {
 
 func (app *App) AddController(c controller) {
 	app.controllers = append(app.controllers, c)
-}
-func newRouter() *chi.Mux {
-	router := chi.NewMux()
-	router.Use(logger.New(slog.Default()))
-
-	// TODO: get allowed origins, headers and methods from cfg
-	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Set-Cookie", "Refresh", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Authorization"},
-		AllowCredentials: true,
-		MaxAge:           300,
-	})
-
-	router.Use(c.Handler)
-
-	router.Get("/api/swagger/*", httpSwagger.WrapHandler)
-
-	return router
 }
 
 func New() *App {
