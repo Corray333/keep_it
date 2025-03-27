@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 
-	"github.com/Corray333/keep_it/internal/domains/note/entities"
 	user_entities "github.com/Corray333/keep_it/internal/domains/user/entities"
 	"github.com/Corray333/keep_it/internal/helpers"
+	"github.com/Corray333/keep_it/internal/storage"
 )
 
 var (
@@ -16,176 +15,161 @@ var (
 )
 
 type repository interface {
-	Begin(ctx context.Context) (context.Context, error)
-	Commit(ctx context.Context) error
-	Rollback(ctx context.Context) error
+	storage.Transactioner
 
-	CreateNote(ctx context.Context, note *entities.Note) (noteID string, err error)
-	GetNote(ctx context.Context, noteID string) (*entities.Note, error)
-	GetNotes(ctx context.Context, userID int64, offset int, filters []helpers.Filter) ([]entities.Note, error)
-	SetNoteCategory(ctx context.Context, userID int64, noteID string, categoryID string) error
-	DeleteNotes(ctx context.Context, userID int64, noteIDs []string) error
-
-	GetTags(ctx context.Context, userID int64) ([]entities.Tag, error)
-	CreateTag(ctx context.Context, tag *entities.Tag) error
-	DeleteTag(ctx context.Context, tag *entities.Tag) error
-	RemoveTagFromNote(ctx context.Context, tag *entities.Tag, noteID string) error
-	AddTagToNote(ctx context.Context, tag *entities.Tag, noteID string) error
+	noteGetter
+	noteCreater
+	tagToNoteAdder
+	tagCreater
+	notesDeleter
+	tagDeleter
+	notesGetter
+	tagFromNoteDeleter
+	categorySetter
+	tagsGetter
+	categoryCreater
+	categoryGetter
 }
 
 type userService interface {
 	GetUser(ctx context.Context, searchUser *user_entities.User) (*user_entities.User, error)
 }
 
+// Note service
+// Requires UserService
 type NoteService struct {
-	repo repository
 	userService
+
+	transactioner      storage.Transactioner
+	noteGetter         noteGetter
+	noteCreater        noteCreater
+	tagToNoteAdder     tagToNoteAdder
+	tagCreater         tagCreater
+	notesDeleter       notesDeleter
+	tagDeleter         tagDeleter
+	notesGetter        notesGetter
+	tagFromNoteDeleter tagFromNoteDeleter
+	categorySetter     categorySetter
+	tagsGetter         tagsGetter
+	categoryCreater    categoryCreater
+	categoryGetter     categoryGetter
 }
 
-func New(repo repository, userService userService) *NoteService {
-	s := &NoteService{
-		repo:        repo,
-		userService: userService,
+func New(options ...option) *NoteService {
+	s := &NoteService{}
+
+	for _, option := range options {
+		option(s)
 	}
+
 	return s
+}
+
+type option func(*NoteService)
+
+func WithUserService(userService userService) option {
+	return func(s *NoteService) {
+		s.userService = userService
+	}
+}
+
+func WithTransactioner(transactioner storage.Transactioner) option {
+	return func(s *NoteService) {
+		s.transactioner = transactioner
+	}
+}
+
+func WithNoteGetter(noteGetter noteGetter) option {
+	return func(s *NoteService) {
+		s.noteGetter = noteGetter
+	}
+}
+func WithNoteCreater(noteCreater noteCreater) option {
+	return func(s *NoteService) {
+		s.noteCreater = noteCreater
+	}
+}
+
+func WithTagToNoteAdder(tagToNoteAdder tagToNoteAdder) option {
+	return func(s *NoteService) {
+		s.tagToNoteAdder = tagToNoteAdder
+	}
+}
+
+func WithTagCreater(tagCreater tagCreater) option {
+	return func(s *NoteService) {
+		s.tagCreater = tagCreater
+	}
+}
+
+func WithNotesDeleter(notesDeleter notesDeleter) option {
+	return func(s *NoteService) {
+		s.notesDeleter = notesDeleter
+	}
+}
+
+func WithTagDeleter(tagDeleter tagDeleter) option {
+	return func(s *NoteService) {
+		s.tagDeleter = tagDeleter
+	}
+}
+
+func WithNotesGetter(notesGetter notesGetter) option {
+	return func(s *NoteService) {
+		s.notesGetter = notesGetter
+	}
+}
+
+func WithTagFromNoteDeleter(tagFromNoteDeleter tagFromNoteDeleter) option {
+	return func(s *NoteService) {
+		s.tagFromNoteDeleter = tagFromNoteDeleter
+	}
+}
+
+func WithCategorySetter(categorySetter categorySetter) option {
+	return func(s *NoteService) {
+		s.categorySetter = categorySetter
+	}
+}
+
+func WithTagsGetter(tagsGetter tagsGetter) option {
+	return func(s *NoteService) {
+		s.tagsGetter = tagsGetter
+	}
+}
+
+func WithCategoryCreater(categoryCreater categoryCreater) option {
+	return func(s *NoteService) {
+		s.categoryCreater = categoryCreater
+	}
+}
+
+func WithCategoryGetter(categoryGetter categoryGetter) option {
+	return func(s *NoteService) {
+		s.categoryGetter = categoryGetter
+	}
+}
+
+func WithRepository(repo repository) option {
+	return func(s *NoteService) {
+		s.transactioner = repo
+		s.noteGetter = repo
+		s.noteCreater = repo
+		s.tagToNoteAdder = repo
+		s.tagCreater = repo
+		s.notesDeleter = repo
+		s.tagDeleter = repo
+		s.notesGetter = repo
+		s.tagFromNoteDeleter = repo
+		s.categorySetter = repo
+		s.tagsGetter = repo
+		s.categoryCreater = repo
+		s.categoryGetter = repo
+	}
 }
 
 func (s *NoteService) Run() {}
 
-func (c *NoteService) GetNoteByID(ctx context.Context, userID int64, noteID string) (*entities.Note, error) {
-	note, err := c.repo.GetNote(ctx, noteID)
-	if err != nil {
-		return nil, err
-	}
-
-	if note.CreatorID != userID {
-		return nil, ErrNoAccess
-	}
-
-	if note.Tags == nil {
-		note.Tags = []entities.Tag{}
-	}
-
-	return note, nil
-}
-
-func (c *NoteService) CreateNote(ctx context.Context, note *entities.NewNoteMessage) (noteID string, err error) {
-	ctx, err = c.repo.Begin(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	if note.Source == "tg" {
-		userID, err := strconv.Atoi(note.UserID)
-		if err != nil {
-			return "", err
-		}
-
-		user, err := c.GetUser(ctx, &user_entities.User{
-			TelegramID: int64(userID),
-		})
-		if err != nil {
-			return "", err
-		}
-
-		note.Note.CreatorID = user.ID
-	}
-
-	noteID, err = c.repo.CreateNote(ctx, &note.Note)
-	if err != nil {
-		_ = c.repo.Rollback(ctx)
-		return "", err
-	}
-
-	if err := c.repo.Commit(ctx); err != nil {
-		return "", err
-	}
-
-	return noteID, nil
-}
-
-func (c *NoteService) GetNotes(ctx context.Context, userID int64, offset int, filters map[string][]string) ([]entities.Note, error) {
-
-	newFilters := []helpers.Filter{}
-
-	for key, values := range filters {
-		switch key {
-		case "tag":
-			newFilters = append(newFilters, helpers.Filter{
-				Field:     helpers.FilterKeyTag,
-				Operation: "IN",
-				Value:     values,
-			})
-		case "category":
-			newFilters = append(newFilters, helpers.Filter{
-				Field:     helpers.FilterKeyCategory,
-				Operation: "=",
-				Value:     values[0],
-			})
-		}
-	}
-
-	notes, err := c.repo.GetNotes(ctx, userID, offset, newFilters)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range notes {
-		if notes[i].Tags == nil {
-			notes[i].Tags = []entities.Tag{}
-		}
-	}
-
-	return notes, nil
-}
-
-func (c *NoteService) GetNewNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error) {
-	return c.repo.GetNotes(ctx, userID, offset, nil)
-}
-
-func (c *NoteService) CreateTag(ctx context.Context, tag *entities.Tag) error {
-	// TODO: add limit in 128 tags
-	return c.repo.CreateTag(ctx, tag)
-}
-
-func (c *NoteService) DeleteTag(ctx context.Context, tag *entities.Tag) error {
-	return c.repo.DeleteTag(ctx, tag)
-}
-
-func (c *NoteService) RemoveTagFromNote(ctx context.Context, tag *entities.Tag, noteID string) error {
-	return c.repo.RemoveTagFromNote(ctx, tag, noteID)
-}
-
-func (s *NoteService) AddTagToNote(ctx context.Context, tag *entities.Tag, noteID string, isNew bool) error {
-	ctx, err := s.repo.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer s.repo.Rollback(ctx)
-
-	if isNew {
-		if err := s.repo.CreateTag(ctx, tag); err != nil {
-			return err
-		}
-	}
-
-	// TODO: add limit in 5 tags
-
-	if err := s.repo.AddTagToNote(ctx, tag, noteID); err != nil {
-		return err
-	}
-
-	return s.repo.Commit(ctx)
-}
-
-func (c *NoteService) GetTags(ctx context.Context, userID int64) ([]entities.Tag, error) {
-	return c.repo.GetTags(ctx, userID)
-}
-
-func (c *NoteService) DeleteNotes(ctx context.Context, useID int64, noteIDs []string) error {
-	return c.repo.DeleteNotes(ctx, useID, noteIDs)
-}
-
-func (c *NoteService) SetNoteCategory(ctx context.Context, userID int64, noteID string, categoryID string) error {
-	return c.repo.SetNoteCategory(ctx, userID, noteID, categoryID)
-}
+// func (c *NoteService) GetNewNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error) {
+// 	return c.repo.GetNotes(ctx, userID, offset, nil)
+// }

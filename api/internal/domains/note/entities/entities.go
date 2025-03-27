@@ -1,33 +1,59 @@
 package entities
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type NoteFilter struct {
+	Category string
+	Tags     []int64
+	Text     string
+	Source   string
+}
+
+type Source string
+
+const (
+	SourceTelegram = "tg"
+	SourceWeb      = "web"
+	SourceVK       = "vk"
+)
+
+type NoteType int8
+
+const (
+	NoteTypeDefault = iota
+)
 
 type Note struct {
-	ID             string          `json:"id" db:"note_id"`
+	ID             uuid.UUID       `json:"id" db:"note_id"`
 	CreatorID      int64           `json:"creator" db:"creator_id"`
 	Tags           []Tag           `json:"tags" db:"tags"`
 	Title          string          `json:"title" db:"title"`
-	Source         string          `json:"source" db:"source"`
+	Source         Source          `json:"source" db:"source"`
 	Original       string          `json:"original" db:"original"`
 	ContentDecoded any             `json:"-" db:"-"`
 	Content        json.RawMessage `json:"content" db:"content"`
 	Cover          string          `json:"cover" db:"cover"`
 
-	CreatedAt int64 `json:"createdAt" db:"created_at"`
-	CopiedAt  int64 `json:"copiedAt" db:"copied_at"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+	CopiedAt  time.Time `json:"copiedAt" db:"copied_at"`
 
-	Type int16 `json:"type" db:"type"`
+	Type NoteType `json:"type" db:"type"`
 
 	Checked bool `json:"checked" db:"checked"`
 
-	CategoryId *string `json:"categoryID" db:"category_id"`
+	CategoryId string `json:"categoryID" db:"category_id"`
 
 	IconDecoded Icon            `json:"-" db:"-"`
 	Icon        json.RawMessage `json:"icon" db:"icon"`
 }
 
 type Tag struct {
-	ID    int    `json:"id" db:"tag_id"`
+	ID    int64  `json:"id" db:"tag_id"`
 	Text  string `json:"text" db:"tag_text"`
 	Color string `json:"color" db:"tag_color"`
 	Owner int64  `json:"owner" db:"owner_id"`

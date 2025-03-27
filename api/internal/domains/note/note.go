@@ -17,7 +17,7 @@ type NoteController struct {
 
 func NewNoteController(router *chi.Mux, store *storage.Storage, userService *user_service.UserService) *NoteController {
 	repo := repository.New(store)
-	service := service.New(repo, userService)
+	service := service.New(service.WithRepository(repo), service.WithUserService(userService))
 	transport := transport.New(router, service)
 
 	return &NoteController{

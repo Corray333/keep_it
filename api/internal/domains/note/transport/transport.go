@@ -14,6 +14,7 @@ import (
 	"github.com/Corray333/keep_it/pkg/server/auth"
 	"github.com/IBM/sarama"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type NoteTransport struct {
@@ -23,19 +24,22 @@ type NoteTransport struct {
 }
 
 type service interface {
-	CreateNote(ctx context.Context, note *entities.NewNoteMessage) (noteID string, err error)
-	GetNoteByID(ctx context.Context, userID int64, noteID string) (*entities.Note, error)
-	DeleteNotes(ctx context.Context, useID int64, noteIDs []string) error
+	CreateNote(ctx context.Context, note *entities.NewNoteMessage) (noteID uuid.UUID, err error)
+	GetNoteByID(ctx context.Context, userID int64, noteID uuid.UUID) (*entities.Note, error)
+	DeleteNotes(ctx context.Context, useID int64, noteIDs []uuid.UUID) error
 
-	GetNotes(ctx context.Context, userID int64, offset int, filters map[string][]string) ([]entities.Note, error)
-	GetNewNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error)
-	SetNoteCategory(ctx context.Context, userID int64, noteID string, categoryID string) error
+	GetNotes(ctx context.Context, userID int64, offset int, filters entities.NoteFilter) ([]entities.Note, error)
+	// GetNewNotes(ctx context.Context, userID int64, offset int) ([]entities.Note, error)
+	SetCategory(ctx context.Context, userID int64, noteID uuid.UUID, categoryID string) error
 
 	GetTags(ctx context.Context, userID int64) ([]entities.Tag, error)
 	CreateTag(ctx context.Context, tag *entities.Tag) error
 	DeleteTag(ctx context.Context, tag *entities.Tag) error
-	RemoveTagFromNote(ctx context.Context, tag *entities.Tag, noteID string) error
-	AddTagToNote(ctx context.Context, tag *entities.Tag, noteID string, isNew bool) error
+	DeleteTagFromNote(ctx context.Context, tag *entities.Tag, noteID uuid.UUID) error
+	AddTagToNote(ctx context.Context, tag *entities.Tag, noteID uuid.UUID, isNew bool) error
+
+	CreateCategory(ctx context.Context, category *entities.Category) (*entities.Category, error)
+	GetCategories(ctx context.Context, userID int64) ([]entities.Category, error)
 }
 
 func New(router *chi.Mux, service service) *NoteTransport {
@@ -66,17 +70,20 @@ func (t *NoteTransport) RegisterRoutes() {
 
 		r.Post("/api/notes", t.createNote)
 		r.Get("/api/notes", t.getNotes)
-		r.Get("/api/notes/new", t.getNewNotes)
+		// r.Get("/api/notes/new", t.getNewNotes)
 		r.Get("/api/notes/{note_id}", t.getNote)
 		r.Delete("/api/notes", t.deleteNote)
 
-		r.Put("/api/notes/{note_id}/categories/{category_id}", t.setNoteCategory)
+		r.Put("/api/notes/{note_id}/categories/{category_id}", t.setCategory)
 
 		r.Post("/api/tags", t.createTag)
 		r.Delete("/api/tags/{tagText}", t.deleteTag)
 		r.Get("/api/tags", t.getTags)
 		r.Post("/api/notes/{noteID}/tags", t.addTagToNote)
-		r.Delete("/api/notes/{noteID}/tags/{tagText}", t.removeTagFromNote)
+		r.Delete("/api/notes/{noteID}/tags/{tagText}", t.deleteTagFromNote)
+
+		r.Post("/api/categories", t.createCategory)
+		r.Get("/api/categories", t.getCategories)
 	})
 }
 
@@ -131,7 +138,7 @@ type CreateNoteRequest struct {
 }
 
 type CreateNoteResponse struct {
-	NoteID string `json:"note_id"`
+	NoteID uuid.UUID `json:"note_id"`
 }
 
 func (t *NoteTransport) createNote(w http.ResponseWriter, r *http.Request) {
@@ -186,7 +193,13 @@ func (t *NoteTransport) getNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	noteID := chi.URLParam(r, "note_id")
+	noteIDStr := chi.URLParam(r, "note_id")
+	noteID, err := uuid.Parse(noteIDStr)
+	if err != nil {
+		slog.Error("Failed to parse note id", "error", err)
+		helpers.SendError(w, err)
+		return
+	}
 
 	note, err := t.service.GetNoteByID(ctx, userID, noteID)
 	if err != nil {
@@ -218,7 +231,12 @@ func (t *NoteTransport) getNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filters := r.URL.Query()
+	filters := entities.NoteFilter{}
+	if err := json.NewDecoder(r.Body).Decode(&filters); err != nil {
+		slog.Error("failed to decode filters: " + err.Error())
+		helpers.SendError(w, err)
+		return
+	}
 
 	notes, err := t.service.GetNotes(ctx, userID, offset, filters)
 	if err != nil {
@@ -234,35 +252,35 @@ func (t *NoteTransport) getNotes(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (t *NoteTransport) getNewNotes(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+// func (t *NoteTransport) getNewNotes(w http.ResponseWriter, r *http.Request) {
+// 	ctx := r.Context()
 
-	userID, ok := r.Context().Value(helpers.CtxUserIDKey).(int64)
-	if !ok {
-		http.Error(w, "user id not found in context", http.StatusInternalServerError)
-		slog.Error("user id not found in context")
-		return
-	}
+// 	userID, ok := r.Context().Value(helpers.CtxUserIDKey).(int64)
+// 	if !ok {
+// 		http.Error(w, "user id not found in context", http.StatusInternalServerError)
+// 		slog.Error("user id not found in context")
+// 		return
+// 	}
 
-	offset, err := helpers.GetIntQueryParam(r, "offset")
-	if err != nil {
-		helpers.SendError(w, err)
-		return
-	}
+// 	offset, err := helpers.GetIntQueryParam(r, "offset")
+// 	if err != nil {
+// 		helpers.SendError(w, err)
+// 		return
+// 	}
 
-	notes, err := t.service.GetNewNotes(ctx, userID, offset)
-	if err != nil {
-		slog.Error("failed to get notes: " + err.Error())
-		helpers.SendError(w, err)
-		return
-	}
+// 	notes, err := t.service.GetNewNotes(ctx, userID, offset)
+// 	if err != nil {
+// 		slog.Error("failed to get notes: " + err.Error())
+// 		helpers.SendError(w, err)
+// 		return
+// 	}
 
-	if err := json.NewEncoder(w).Encode(notes); err != nil {
-		slog.Error("failed to encode response: " + err.Error())
-		helpers.SendError(w, err)
-		return
-	}
-}
+// 	if err := json.NewEncoder(w).Encode(notes); err != nil {
+// 		slog.Error("failed to encode response: " + err.Error())
+// 		helpers.SendError(w, err)
+// 		return
+// 	}
+// }
 
 type CreateTagRequest struct {
 	entities.Tag
@@ -372,17 +390,22 @@ func (t *NoteTransport) addTagToNote(w http.ResponseWriter, r *http.Request) {
 
 	req.Owner = userID
 
-	noteID := chi.URLParam(r, "noteID")
-
-	err := t.service.AddTagToNote(ctx, &req.Tag, noteID, req.IsNew)
+	noteIDStr := chi.URLParam(r, "noteID")
+	noteID, err := uuid.Parse(noteIDStr)
 	if err != nil {
+		slog.Error("Failed to parse note id", "error", err)
+		helpers.SendError(w, err)
+		return
+	}
+
+	if err := t.service.AddTagToNote(ctx, &req.Tag, noteID, req.IsNew); err != nil {
 		slog.Error("failed to add tag to note: " + err.Error())
 		helpers.SendError(w, err)
 		return
 	}
 }
 
-func (t *NoteTransport) removeTagFromNote(w http.ResponseWriter, r *http.Request) {
+func (t *NoteTransport) deleteTagFromNote(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	userID, ok := r.Context().Value(helpers.CtxUserIDKey).(int64)
@@ -392,14 +415,19 @@ func (t *NoteTransport) removeTagFromNote(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	noteID := chi.URLParam(r, "noteID")
+	noteIDStr := chi.URLParam(r, "noteID")
+	noteID, err := uuid.Parse(noteIDStr)
+	if err != nil {
+		slog.Error("Failed to parse note id", "error", err)
+		helpers.SendError(w, err)
+		return
+	}
 	tagText := chi.URLParam(r, "tagText")
 
-	err := t.service.RemoveTagFromNote(ctx, &entities.Tag{
+	if err := t.service.DeleteTagFromNote(ctx, &entities.Tag{
 		Text:  tagText,
 		Owner: userID,
-	}, noteID)
-	if err != nil {
+	}, noteID); err != nil {
 		slog.Error("failed to remove tag from note: " + err.Error())
 		helpers.SendError(w, err)
 		return
@@ -416,9 +444,20 @@ func (t *NoteTransport) deleteNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	noteIDs := r.URL.Query()["note_id"]
-	if len(noteIDs) == 0 {
+	noteIDsStr := r.URL.Query()["note_id"]
+	if len(noteIDsStr) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	noteIDs := []uuid.UUID{}
+	for _, noteIDStr := range noteIDsStr {
+		noteID, err := uuid.Parse(noteIDStr)
+		if err != nil {
+			slog.Error("Failed to parse note id", "error", err)
+			helpers.SendError(w, err)
+			return
+		}
+		noteIDs = append(noteIDs, noteID)
 	}
 
 	if err := t.service.DeleteNotes(ctx, userID, noteIDs); err != nil {
@@ -430,7 +469,7 @@ func (t *NoteTransport) deleteNote(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (t *NoteTransport) setNoteCategory(w http.ResponseWriter, r *http.Request) {
+func (t *NoteTransport) setCategory(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	userID, ok := r.Context().Value(helpers.CtxUserIDKey).(int64)
@@ -440,15 +479,73 @@ func (t *NoteTransport) setNoteCategory(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	noteID := chi.URLParam(r, "note_id")
+	noteIDStr := chi.URLParam(r, "note_id")
+	noteID, err := uuid.Parse(noteIDStr)
+	if err != nil {
+		slog.Error("Failed to parse note id", "error", err)
+		helpers.SendError(w, err)
+		return
+	}
 	categoryID := chi.URLParam(r, "category_id")
 
-	err := t.service.SetNoteCategory(ctx, userID, noteID, categoryID)
-	if err != nil {
+	if err := t.service.SetCategory(ctx, userID, noteID, categoryID); err != nil {
 		slog.Error("failed to set note category: " + err.Error())
 		helpers.SendError(w, err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (t *NoteTransport) createCategory(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := r.Context().Value(helpers.CtxUserIDKey).(int64)
+	if !ok {
+		slog.Error("User id not found in context")
+		helpers.SendError(w, helpers.ErrInternal)
+		return
+	}
+
+	category := &entities.Category{}
+	if err := json.NewDecoder(r.Body).Decode(category); err != nil {
+		helpers.SendError(w, err)
+		return
+	}
+
+	category.OwnerID = userID
+
+	category, err := t.service.CreateCategory(ctx, category)
+	if err != nil {
+		helpers.SendError(w, err)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(category); err != nil {
+		helpers.SendError(w, err)
+		return
+	}
+
+}
+
+func (t *NoteTransport) getCategories(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userID, ok := r.Context().Value(helpers.CtxUserIDKey).(int64)
+	if !ok {
+		slog.Error("User id not found in context")
+		helpers.SendError(w, helpers.ErrInternal)
+		return
+	}
+
+	categories, err := t.service.GetCategories(ctx, userID)
+	if err != nil {
+		helpers.SendError(w, err)
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(categories); err != nil {
+		helpers.SendError(w, err)
+		return
+	}
 }
