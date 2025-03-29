@@ -1,7 +1,6 @@
 package external
 
 import (
-	"bytes"
 	"io"
 	"log/slog"
 	"net/http"
@@ -18,7 +17,7 @@ func New(tgClient *telegram.TelegramClient) *External {
 	return &External{tgClient}
 }
 
-func (e *External) GetTgPhoto(photos []tgbotapi.PhotoSize) (io.Reader, error) {
+func (e *External) GetTgPhoto(photos []tgbotapi.PhotoSize) ([]byte, error) {
 	photo := photos[len(photos)-1]
 
 	// Get the file URL
@@ -37,12 +36,11 @@ func (e *External) GetTgPhoto(photos []tgbotapi.PhotoSize) (io.Reader, error) {
 	}
 	defer resp.Body.Close()
 
-	var photoFile bytes.Buffer
-	_, err = io.Copy(&photoFile, resp.Body)
+	result, err := io.ReadAll(resp.Body)
 	if err != nil {
-		slog.Error("error copying file: " + err.Error())
+		slog.Error("Rrror reading file", "error", err)
 		return nil, err
 	}
 
-	return &photoFile, nil
+	return result, nil
 }

@@ -94,6 +94,7 @@ func (s *Storage) NewNote(ctx context.Context, note *entities.NewNoteMessage) er
 }
 
 func (s *Storage) SaveNote(ctx context.Context, creationDate, chatID int64, note *entities.Note) error {
+	fmt.Println("Zametka: ", note.ContentDecoded)
 	jsonData, err := json.Marshal(note)
 	if err != nil {
 		slog.Error("failed to marshal note: " + err.Error())
@@ -134,6 +135,7 @@ func (s *Storage) GetNotes(ctx context.Context, creationDate, chtID int64) ([]*e
 		if err := json.Unmarshal([]byte(note), &n); err != nil {
 			return nil, err
 		}
+		fmt.Println("Anal: ", n.ContentDecoded)
 
 		res = append(res, n)
 	}

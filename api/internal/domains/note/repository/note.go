@@ -21,7 +21,7 @@ type noteDb struct {
 	Content    json.RawMessage `db:"content"`
 	Cover      string          `db:"cover"`
 	Checked    bool            `db:"checked"`
-	CategoryID string          `db:"category_id"`
+	CategoryID uuid.UUID       `db:"category_id"`
 }
 
 func (n *noteDb) ToNote() *entities.Note {

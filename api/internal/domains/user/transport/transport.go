@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -89,6 +90,8 @@ func (t *UserTransport) signUp(w http.ResponseWriter, r *http.Request) {
 		slog.Error("Failed to insert user: " + err.Error())
 		return
 	}
+
+	fmt.Println("Creds: ", creds)
 
 	cookie := http.Cookie{
 		Name:     "Refresh",
@@ -253,7 +256,9 @@ func (t *UserTransport) findUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user.Password = ""
+	if user != nil {
+		user.Password = ""
+	}
 
 	respondJSON(w, user)
 }

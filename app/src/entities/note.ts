@@ -7,8 +7,8 @@ export interface Note {
     original: string
     content: ContentElement[]
     cover: string
-    createdAt: number
-    copiedAt: number
+    createdAt: Date
+    copiedAt: Date
     type: number
     checked: boolean
     categoryID?: string
@@ -24,8 +24,8 @@ export class NoteTemplate implements Note {
     original: string = ''
     content: ContentElement[] = []
     cover: string = ''
-    createdAt: number = 0
-    copiedAt: number = 0
+    createdAt: Date = new Date()
+    copiedAt: Date = new Date()
     type: number = 0
     checked: boolean = false
     categoryId: string = ''

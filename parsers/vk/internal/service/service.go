@@ -166,7 +166,7 @@ func (s *Service) ParseMessage(ctx context.Context, message *object.MessagesMess
 	if err := s.repo.NewNote(ctx, &entities.NewNoteMessage{
 		Note:   *note,
 		Source: "tg",
-		UserID: "377742748",
+		UserID: strconv.Itoa(message.FromID),
 	}); err != nil {
 		return err
 	}

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"regexp"
+	"time"
 
 	"github.com/Corray333/keep_it/internal/domains/user/entities"
 	"github.com/Corray333/keep_it/internal/errs"
@@ -29,7 +30,7 @@ type verificationCodeGetter interface {
 }
 
 type refreshTokenSetter interface {
-	SetRefreshToken(ctx context.Context, userID int64, refreshToken string, expiresAt int64) (err error)
+	SetRefreshToken(ctx context.Context, userID int64, refreshToken string, expiresAt time.Time) (err error)
 }
 
 func (s *UserService) SignUp(ctx context.Context, user entities.User, code string) (userID int64, accessToken string, refreshToken string, err error) {
@@ -74,7 +75,7 @@ func (s *UserService) SignUp(ctx context.Context, user entities.User, code strin
 		return 0, "", "", fmt.Errorf("failed to insert user: " + err.Error())
 	}
 
-	refreshToken, err = auth.CreateToken(user.ID, viper.GetDuration("auth.refresh_token_lifetime"))
+	refreshToken, err = auth.CreateToken(userID, viper.GetDuration("auth.refresh_token_lifetime"))
 	if err != nil {
 		return 0, "", "", fmt.Errorf("failed to create access token: " + err.Error())
 	}
@@ -85,7 +86,7 @@ func (s *UserService) SignUp(ctx context.Context, user entities.User, code strin
 		return 0, "", "", err
 	}
 
-	err = s.signUper.SetRefreshToken(ctx, userID, refreshToken, creds.Exp.Unix())
+	err = s.signUper.SetRefreshToken(ctx, userID, refreshToken, creds.Exp)
 	if err != nil {
 		return 0, "", "", fmt.Errorf("failed to set refresh token: " + err.Error())
 	}

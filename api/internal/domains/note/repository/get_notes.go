@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
+	"strings"
 
 	"github.com/Corray333/keep_it/internal/domains/note/entities"
 	"github.com/Masterminds/squirrel"
@@ -38,11 +40,13 @@ func (r *NoteRepository) GetNotes(ctx context.Context, userID int64, offset int,
 
 	queryStr, args, err := sq.ToSql()
 	if err != nil {
+		slog.Error("Error building query", "error", err)
 		return nil, err
 	}
 
 	notesInternal := []noteDb{}
 	if err := r.DB.Select(&notesInternal, queryStr, args...); err != nil && errors.Is(err, sql.ErrNoRows) {
+		slog.Error("Error getting notes", "error", err)
 		return nil, err
 	}
 
@@ -53,9 +57,23 @@ func (r *NoteRepository) GetNotes(ctx context.Context, userID int64, offset int,
 		noteIDs = append(noteIDs, note.NoteID)
 	}
 
+	fmt.Println(notes)
+
 	tags := []tagDB{}
-	if err := r.DB.Select(&tags, "SELECT * FROM note_tag NATURAL JOIN tags WHERE note_id IN ($1)", noteIDs); err != nil {
-		return nil, err
+	if len(noteIDs) > 0 {
+		placeholders := make([]string, len(noteIDs))
+		args := make([]interface{}, len(noteIDs))
+		for i, id := range noteIDs {
+			placeholders[i] = fmt.Sprintf("$%d", i+1)
+			args[i] = id
+		}
+		query := fmt.Sprintf("SELECT note_id, tag_text, tag_color FROM note_tag NATURAL JOIN tags WHERE note_id IN (%s)", strings.Join(placeholders, ","))
+		if err := r.DB.Select(&tags, query, args...); err != nil {
+			slog.Error("Error getting tags", "error", err)
+			return nil, err
+		}
+	} else {
+		tags = []tagDB{}
 	}
 
 	tagsMap := map[uuid.UUID][]entities.Tag{}

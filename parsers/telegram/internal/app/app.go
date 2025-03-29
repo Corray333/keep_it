@@ -24,7 +24,7 @@ func New() *App {
 	storage := repository.New()
 	tgClient := telegram.New()
 	external := external.New(tgClient)
-	fileManager := file.New()
+	fileManager := file.NewFileManager()
 	service := service.New(storage, external, fileManager)
 
 	transport := transport.New(service, tgClient)

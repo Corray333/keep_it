@@ -3,9 +3,10 @@ package repository
 import (
 	"context"
 	"log/slog"
+	"time"
 )
 
-func (s *UserRepository) SetRefreshToken(ctx context.Context, userID int64, refreshToken string, expiresAt int64) (err error) {
+func (s *UserRepository) SetRefreshToken(ctx context.Context, userID int64, refreshToken string, expiresAt time.Time) (err error) {
 	tx, isNew, err := s.GetTx(ctx)
 	if err != nil {
 		return err

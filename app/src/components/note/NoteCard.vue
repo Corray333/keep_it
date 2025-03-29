@@ -6,6 +6,7 @@ import ContentH1 from './content/ContentH1.vue';
 import ContentImage from './content/ContentImage.vue';
 import TagsBlock from './TagsBlock.vue';
 import ContentP from './content/ContentP.vue';
+import SlideUpDown from 'vue-slide-up-down'
 
 import {  onBeforeMount, onMounted, ref, watch } from 'vue';
 import { Accordion, AccordionContent, AccordionHeader, AccordionPanel, Image as Img, TreeSelect } from 'primevue';
@@ -18,6 +19,7 @@ import { NoteService } from '@/service/note';
 import { useI18n } from 'vue-i18n'
 import { loadLocaleMessages } from '@/i18n'
 import CloseIcon from '../icons/close-icon.vue';
+import { format } from 'date-fns';
 
 const { t, locale } = useI18n()
 
@@ -54,15 +56,22 @@ const categorySelected = ref()
 onMounted(()=>{
     categorySelected.value = {}
     if (props.note.categoryID)categorySelected.value[props.note.categoryID] = true
+
+    watch(categorySelected, (newVal) => {
+        let categoryID = ''
+        if (Object.keys(newVal).length>0) categoryID = Object.keys(newVal)[0]
+        if (categoryID == '') return
+        noteService.setNoteCategory(props.note.id, categoryID)
+    })
 })
 
-watch(categorySelected, (newVal) => {
-    let categoryID = ''
-    if (Object.keys(newVal).length>0) categoryID = Object.keys(newVal)[0]
-    if (categoryID == '') return
-    noteService.setNoteCategory(props.note.id, categoryID)
-})
 
+
+const formatDateTime = (timestamp: string | number | Date) => {
+    return format(new Date(timestamp), 'dd.MM.yyyy HH:mm:ss');
+};
+
+const showFullHeader = ref(false)
 
 </script>
 
@@ -83,35 +92,29 @@ watch(categorySelected, (newVal) => {
                         </Img>
                         
                         <div class="note-page-header">
-                            <Accordion unstyled class="w-full" expandIcon="pi" collapseIcon="pi">
-                                <AccordionPanel unstyled value="0" class="w-full">
-                                    <AccordionHeader unstyled class="w-full">
-                                        <div class="note-page-header-tab">
-                                            <div class="note-page-header-label">
-                                                <NoteIcon :icon="note.icon.data" />
-                                                <a :href="note.original" target="_blank"><p>{{ note.title }}</p></a>
-                                            </div>
-                
-                                            <TagsBlock :tags="note.tags" :noteID="note.id" /> 
-                                        </div>
-                                    </AccordionHeader>
-                                    <AccordionContent unstyled>
-                                        <div class="note-page-header-more">
-                                            <div class="tags-picker">
-                                                <span class="select-tag" v-for="(tag, i) of note.tags" :key="i" 
-                                                    :style="{ backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40) }">
-                                                    <p>{{ tag.text }}</p>
-                                                    <CloseIcon />
-                                                </span>
-                                            </div>
-                                            <TreeSelect v-model="categorySelected" :options="notesStore.categories" placeholder="Category"/>
-                                            <p v-if="note.createdAt">{{ t('properties.createdAt') }}: {{ TimeFromUnix(note.createdAt) }}</p>
-                                            <p>{{ t('properties.copiedAt') }}: {{ TimeFromUnix(note.copiedAt) }}</p>
-                                            <p>{{ t('properties.source') }}: {{ note.source }}</p>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionPanel>
-                            </Accordion>
+                            <div class="note-page-header-tab" @click="showFullHeader = !showFullHeader">
+                                <div class="note-page-header-label">
+                                    <NoteIcon :icon="note.icon.data" />
+                                    <a :href="note.original" target="_blank"><p>{{ note.title }}</p></a>
+                                </div>
+    
+                                <TagsBlock :tags="note.tags" :noteID="note.id" /> 
+                            </div>
+                            <SlideUpDown :active="showFullHeader">
+                                <div class="note-page-header-more">
+                                    <div class="tags-picker">
+                                        <span class="select-tag" v-for="(tag, i) of note.tags" :key="i" 
+                                            :style="{ backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40) }">
+                                            <p>{{ tag.text }}</p>
+                                            <CloseIcon />
+                                        </span>
+                                    </div>
+                                    <TreeSelect v-model="categorySelected" :options="notesStore.categories" placeholder="Category"/>
+                                    <p v-if="note.createdAt">{{ t('properties.createdAt') }}: {{ formatDateTime(note.copiedAt) }}</p>
+                                    <p>{{ t('properties.copiedAt') }}: {{ formatDateTime(note.copiedAt) }}</p>
+                                    <p>{{ t('properties.source') }}: {{ note.source }}</p>
+                                </div>
+                            </SlideUpDown>
                         </div>
             
                         <div class="note-page-content">
@@ -217,7 +220,7 @@ watch(categorySelected, (newVal) => {
     @apply w-full h-96 object-cover rounded-t-2xl;
 }
 .note-page-header{
-    @apply p-4 flex items-center gap-2 border-b-2 w-full justify-between;
+    @apply p-4 flex flex-col border-b-2 border-invert-bg-50 cursor-pointer
 }
 .note-page-header-label{
     @apply flex items-center gap-2 text-xl
@@ -230,7 +233,7 @@ watch(categorySelected, (newVal) => {
 }
 
 .note-page-header-more{
-    @apply flex flex-col gap-2
+    @apply flex flex-col gap-2 pt-2;
 }
 
 

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/google/uuid"
 )
@@ -16,6 +17,7 @@ func (r *NoteRepository) SetCategory(ctx context.Context, userID int64, noteID u
 	}
 
 	if _, err := tx.Exec("UPDATE notes SET category_id = $1 WHERE note_id = $2 AND creator_id = $3", categoryID, noteID, userID); err != nil {
+		slog.Error("Error setting category", "error", err)
 		return err
 	}
 

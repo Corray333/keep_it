@@ -46,7 +46,7 @@ type Note struct {
 
 	Checked bool `json:"checked" db:"checked"`
 
-	CategoryId string `json:"categoryID" db:"category_id"`
+	CategoryId uuid.UUID `json:"categoryID" db:"category_id"`
 
 	IconDecoded Icon            `json:"-" db:"-"`
 	Icon        json.RawMessage `json:"icon" db:"icon"`

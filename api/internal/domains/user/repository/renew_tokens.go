@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"time"
 )
 
-func (s *UserRepository) RenewTokens(ctx context.Context, userID int64, oldRefreshToken, newRefreshToken string, expiresAt int64) (err error) {
+func (s *UserRepository) RenewTokens(ctx context.Context, userID int64, oldRefreshToken, newRefreshToken string, expiresAt time.Time) (err error) {
 	tx, isNew, err := s.GetTx(ctx)
 	if err != nil {
 		return err

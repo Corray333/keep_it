@@ -231,11 +231,22 @@ func (t *NoteTransport) getNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filters := entities.NoteFilter{}
-	if err := json.NewDecoder(r.Body).Decode(&filters); err != nil {
-		slog.Error("failed to decode filters: " + err.Error())
-		helpers.SendError(w, err)
-		return
+	tags := r.URL.Query()["tags"]
+	category := r.URL.Query().Get("category")
+
+	tagsIDs := []int64{}
+	for _, tag := range tags {
+		tagID, err := strconv.ParseInt(tag, 10, 64)
+		if err != nil {
+			helpers.SendError(w, err)
+			return
+		}
+		tagsIDs = append(tagsIDs, tagID)
+	}
+
+	filters := entities.NoteFilter{
+		Category: category,
+		Tags:     tagsIDs,
 	}
 
 	notes, err := t.service.GetNotes(ctx, userID, offset, filters)

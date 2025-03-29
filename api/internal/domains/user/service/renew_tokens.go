@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/Corray333/keep_it/internal/storage"
 	"github.com/Corray333/keep_it/pkg/server/auth"
@@ -13,7 +14,7 @@ import (
 type tokensRenewer interface {
 	storage.Transactioner
 
-	RenewTokens(ctx context.Context, userID int64, oldRefreshToken, newRefreshToken string, expiresAt int64) (err error)
+	RenewTokens(ctx context.Context, userID int64, oldRefreshToken, newRefreshToken string, expiresAt time.Time) (err error)
 }
 
 func (s *UserService) RenewTokens(ctx context.Context, userID int64, oldRefreshToken string) (accessToken, refreshToken string, err error) {
@@ -33,7 +34,7 @@ func (s *UserService) RenewTokens(ctx context.Context, userID int64, oldRefreshT
 		return "", "", err
 	}
 
-	err = s.tokensRenewer.RenewTokens(ctx, userID, oldRefreshToken, refreshToken, creds.Exp.Unix())
+	err = s.tokensRenewer.RenewTokens(ctx, userID, oldRefreshToken, refreshToken, creds.Exp)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to renew tokens: " + err.Error())
 	}

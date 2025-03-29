@@ -10,7 +10,6 @@ export class NoteTransport {
         }
         if (category) filter += `&category=${category}`
 
-        console.log(filter)
         try {
             const response = await api.get(`/notes?offset=${offset}${filter}`)
             return response.data

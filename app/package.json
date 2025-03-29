@@ -15,6 +15,7 @@
   "dependencies": {
     "@primevue/themes": "^4.2.2",
     "axios": "^1.7.7",
+    "date-fns": "^4.1.0",
     "pinia": "^2.2.4",
     "primeicons": "^7.0.0",
     "primevue": "^4.2.2",
@@ -23,7 +24,8 @@
     "v-click-outside": "^3.2.0",
     "vue": "^3.5.12",
     "vue-i18n": "^10.0.0",
-    "vue-router": "^4.4.5"
+    "vue-router": "^4.4.5",
+    "vue-slide-up-down": "^3.0.0"
   },
   "devDependencies": {
     "@tsconfig/node20": "^20.1.4",

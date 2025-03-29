@@ -61,7 +61,7 @@ func (s *UserService) LogIn(ctx context.Context, user *entities.User, code strin
 		return nil, "", "", err
 	}
 
-	err = s.logIner.SetRefreshToken(ctx, fullUser.ID, refreshToken, creds.Exp.Unix())
+	err = s.logIner.SetRefreshToken(ctx, fullUser.ID, refreshToken, creds.Exp)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("failed to set refresh token: " + err.Error())
 	}

@@ -35,10 +35,16 @@ type userService interface {
 	GetUser(ctx context.Context, searchUser *user_entities.User) (*user_entities.User, error)
 }
 
+type fileGetter interface {
+	GetFileURL(ctx context.Context, name string) (string, error)
+}
+
 // Note service
 // Requires UserService
 type NoteService struct {
 	userService
+
+	fileGetter fileGetter
 
 	transactioner      storage.Transactioner
 	noteGetter         noteGetter
@@ -66,6 +72,12 @@ func New(options ...option) *NoteService {
 }
 
 type option func(*NoteService)
+
+func WithFileGetter(fileGetter fileGetter) option {
+	return func(s *NoteService) {
+		s.fileGetter = fileGetter
+	}
+}
 
 func WithUserService(userService userService) option {
 	return func(s *NoteService) {
