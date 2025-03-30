@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Corray333/keep_it/internal/helpers"
@@ -26,7 +27,7 @@ func NewAuthMiddleware() func(next http.Handler) http.Handler {
 
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Auth: ", r.Header.Get("Authorization"))
-			creds, err := VerifyToken(r.Header.Get("Authorization"))
+			creds, err := VerifyToken(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
 			if err != nil {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				slog.Error("Unauthorized: " + err.Error())

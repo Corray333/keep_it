@@ -13,6 +13,7 @@ import type { User } from '@/entities/user';
 import { useRouter } from 'vue-router';
 import QRCodeStyling from 'qr-code-styling';
 import { baseURL } from '@/helpers/data';
+import VKLoginButton from '@/components/login/VKLoginButton.vue';
 
 
 const router = useRouter()
@@ -223,10 +224,11 @@ const componentsStore = useComponentsStore()
                     <h3>{{ t('usernamePage.title') }}</h3>
                     <input v-model="username" type="text" :placeholder="t('usernamePage.usernameOrEmail')">
                     <button @click="checkUsername" class="button-1">{{ t('continueBtn') }}</button>
-                    <!-- <span class="flex items-center gap-2">
+                    <span class="flex items-center gap-2">
                         <p>{{ t('usernamePage.logInUsing') }}</p>
+                        <VKLoginButton/>
                         <GoogleIcon @click="componentsStore.newError()" class=" text-xl text-active" />
-                    </span> -->
+                    </span>
                 </div>
             </div>
 

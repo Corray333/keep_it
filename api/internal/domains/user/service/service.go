@@ -17,6 +17,7 @@ type repository interface {
 	signUper
 	logIner
 	tokensRenewer
+	vkIdSetter
 
 	userGetter
 }
@@ -28,6 +29,7 @@ type UserService struct {
 	verificationCodeGetter verificationCodeGetter
 	tokensRenewer          tokensRenewer
 	userGetter             userGetter
+	vkIdSetter             vkIdSetter
 }
 
 type Option func(*UserService)
@@ -68,6 +70,12 @@ func WithUserGetter(u userGetter) Option {
 	}
 }
 
+func WithVkIdSetter(v vkIdSetter) Option {
+	return func(s *UserService) {
+		s.vkIdSetter = v
+	}
+}
+
 func WithRepository(repo repository) Option {
 	return func(s *UserService) {
 		s.transactioner = repo
@@ -76,6 +84,7 @@ func WithRepository(repo repository) Option {
 		s.verificationCodeGetter = repo
 		s.tokensRenewer = repo
 		s.userGetter = repo
+		s.vkIdSetter = repo
 	}
 }
 

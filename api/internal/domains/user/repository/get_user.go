@@ -28,6 +28,8 @@ func (s *UserRepository) GetUser(ctx context.Context, searchUser *entities.User)
 		// Если указан TelegramID - ищем только по нему
 		if searchUser.TelegramID != 0 {
 			where = append(where, squirrel.Eq{"tg_id": searchUser.TelegramID})
+		} else if searchUser.VKID != 0 {
+			where = append(where, squirrel.Eq{"vk_id": searchUser.VKID})
 		} else if searchUser.Username != "" || searchUser.Email != "" {
 			// Ищем по username или email с OR условием
 			orConditions := squirrel.Or{}

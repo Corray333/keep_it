@@ -17,7 +17,8 @@ type noteCreater interface {
 
 func (c *NoteService) CreateNote(ctx context.Context, note *entities.NewNoteMessage) (noteID uuid.UUID, err error) {
 
-	if note.Source == "tg" {
+	switch note.Source {
+	case "tg":
 		userID, err := strconv.Atoi(note.UserID)
 		if err != nil {
 			return uuid.Nil, err
@@ -25,6 +26,20 @@ func (c *NoteService) CreateNote(ctx context.Context, note *entities.NewNoteMess
 
 		user, err := c.GetUser(ctx, &user_entities.User{
 			TelegramID: int64(userID),
+		})
+		if err != nil {
+			return uuid.Nil, err
+		}
+
+		note.Note.CreatorID = user.ID
+	case "vk":
+		userID, err := strconv.Atoi(note.UserID)
+		if err != nil {
+			return uuid.Nil, err
+		}
+
+		user, err := c.GetUser(ctx, &user_entities.User{
+			VKID: int64(userID),
 		})
 		if err != nil {
 			return uuid.Nil, err

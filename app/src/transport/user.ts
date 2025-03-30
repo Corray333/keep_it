@@ -2,6 +2,7 @@ import type { User } from "@/entities/user"
 import { api, logError } from "./main"
 import { useAccountStore } from "@/stores/account"
 import axios from "axios"
+import { baseURL } from '../helpers/data';
 
 interface SignUpResponse {
     authorization: string
@@ -78,5 +79,13 @@ export class UserTransport {
             logError(error)
             return false
         }
+    }
+
+    static linkVK = async (idToken: string) => {
+        await api.post("/users/link/vk", {
+            vkIdToken: idToken
+        }, {
+            useAuth: true
+        })
     }
 }

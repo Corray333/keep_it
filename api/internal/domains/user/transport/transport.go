@@ -28,6 +28,7 @@ type service interface {
 	GetUser(ctx context.Context, searchUser *entities.User) (*entities.User, error)
 
 	CodeExists(ctx context.Context, username string, syn int64) (bool, error)
+	SetVKID(ctx context.Context, userID int64, vkIDToken string) error
 }
 
 func New(router *chi.Mux, service service) *UserTransport {
@@ -45,6 +46,8 @@ func (t *UserTransport) RegisterRoutes() {
 	t.router.Post("/api/users/login-find", t.findUser)
 
 	t.router.Group(func(r chi.Router) {
+		r.Use(auth.NewAuthMiddleware())
+		r.Post("/api/users/link/vk", t.linkVK)
 	})
 }
 
@@ -292,4 +295,34 @@ func (t *UserTransport) codeExists(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, CodeExistsResponse{
 		Exists: exists,
 	})
+}
+
+type LinkVKRequest struct {
+	VKIDToken string `json:"vkIdToken"`
+}
+
+func (t *UserTransport) linkVK(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req LinkVKRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		slog.Error("failed to decode request: " + err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := r.Context().Value(helpers.CtxUserIDKey).(int64)
+	if !ok {
+		slog.Error("user id not found in context")
+		helpers.SendError(w, helpers.ErrInternal)
+		return
+	}
+
+	if err := t.service.SetVKID(ctx, userID, req.VKIDToken); err != nil {
+		slog.Error("failed to link VK ID: " + err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

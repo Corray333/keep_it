@@ -82,6 +82,20 @@ services:
     depends_on:
       - kafka
       - api
+
+  parser-web:
+    build: 
+      context: ./parsers/web
+      dockerfile: Dockerfile
+    volumes:
+      - ./parsers/web:/app
+      - .env:/app/.env
+    ports:
+      - 3101:3101
+    command: make run
+    depends_on:
+      - kafka
+      - api
   
   app:
     image: node:latest

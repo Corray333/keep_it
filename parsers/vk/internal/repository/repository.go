@@ -75,6 +75,8 @@ func (s *Storage) NewNote(ctx context.Context, note *entities.NewNoteMessage) er
 		return err
 	}
 
+	fmt.Println(string(encoded))
+
 	// Produce a message
 	msg := &sarama.ProducerMessage{
 		Topic: topic,

@@ -166,3 +166,6 @@
 .p-tree-node-content.p-tree-node-selected .p-tree-node-toggle-button:hover{
   color: var(--invert-bg) !important;
 }
+.p-tree{
+  padding: 0 !important;
+}

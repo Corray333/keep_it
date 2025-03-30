@@ -11,7 +11,9 @@ export class NoteTransport {
         if (category) filter += `&category=${category}`
 
         try {
-            const response = await api.get(`/notes?offset=${offset}${filter}`)
+            const response = await api.get(`/notes?offset=${offset}${filter}`, {
+                useAuth: true
+            })
             return response.data
         } catch (error) {
             logError(error)

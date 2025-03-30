@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/Corray333/keep_it/parsers/vk/internal/entities"
 	"github.com/SevereCloud/vksdk/v3/api"
@@ -56,10 +57,10 @@ func (s *Service) ParseMessage(ctx context.Context, message *object.MessagesMess
 	if message.FwdMessages != nil {
 		note.Title = "Forwarded Message"
 		// note.Original = fmt.Sprintf("https://vk.com/id%d?w=wall%d_%d", message.FromID, message.PeerID, message.ConversationMessageID)
-		note.CopiedAt = int64(message.Date)
+		note.CopiedAt = time.Unix(int64(message.Date), 0)
 	} else {
 		note.Title = "Untitled"
-		note.CopiedAt = int64(message.Date)
+		note.CopiedAt = time.Unix(int64(message.Date), 0)
 	}
 
 	bottomPhotos := []entities.ImgElement{}
@@ -92,8 +93,8 @@ func (s *Service) ParseMessage(ctx context.Context, message *object.MessagesMess
 				note.Original = fmt.Sprintf("https://vk.com/wall%d_%d", attachment.Wall.OwnerID, attachment.Wall.ID)
 			}
 
-			if note.CreatedAt == 0 {
-				note.CreatedAt = int64(attachment.Wall.Date)
+			if note.CreatedAt.IsZero() {
+				note.CreatedAt = time.Unix(int64(attachment.Wall.Date), 0)
 			}
 
 			groupID := strconv.Itoa(-attachment.Wall.FromID)
@@ -165,7 +166,7 @@ func (s *Service) ParseMessage(ctx context.Context, message *object.MessagesMess
 	// Сохраняем заметку
 	if err := s.repo.NewNote(ctx, &entities.NewNoteMessage{
 		Note:   *note,
-		Source: "tg",
+		Source: "vk",
 		UserID: strconv.Itoa(message.FromID),
 	}); err != nil {
 		return err
