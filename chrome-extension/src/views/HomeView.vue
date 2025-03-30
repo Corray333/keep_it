@@ -1,14 +1,24 @@
 <script setup lang="ts">
-import { useAccountStore } from '@/stores/account';
+import { ref } from 'vue';
 
 
-const accStore = useAccountStore()
+const pageContent = ref('');
+
+function grabContent() {
+  chrome.runtime.sendMessage(
+    { type: 'GET_PAGE_CONTENT' } as { type: string; data?: string },
+    (response: { data?: string }) => {
+      pageContent.value = response?.data || 'No content found';
+    }
+  );
+}
 
 </script>
 
 <template>
   <main>
     <h1>You are logged in</h1>
-    <p>Token: {{ accStore.authorization }}</p>
+    <button @click="grabContent">Grab content</button>
+    <p>{{ pageContent }}</p>
   </main>
 </template>
