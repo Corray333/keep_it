@@ -20,33 +20,33 @@ type tokensRenewer interface {
 func (s *UserService) RenewTokens(ctx context.Context, userID int64, oldRefreshToken string) (accessToken, refreshToken string, err error) {
 	ctx, err = s.tokensRenewer.Begin(ctx)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to begin transaction: " + err.Error())
+		return "", "", fmt.Errorf("failed to begin transaction: ", "error", err)
 	}
 	defer s.tokensRenewer.Rollback(ctx)
 
 	refreshToken, err = auth.CreateToken(userID, viper.GetDuration("auth.refresh_token_lifetime"))
 	if err != nil {
-		return "", "", fmt.Errorf("failed to create access token: " + err.Error())
+		return "", "", fmt.Errorf("failed to create access token: ", "error", err)
 	}
 	creds, err := auth.ExtractCredentials(refreshToken)
 	if err != nil {
-		slog.Error("failed to extract credentials: " + err.Error())
+		slog.Error("failed to extract credentials: ", "error", err)
 		return "", "", err
 	}
 
 	err = s.tokensRenewer.RenewTokens(ctx, userID, oldRefreshToken, refreshToken, creds.Exp)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to renew tokens: " + err.Error())
+		return "", "", fmt.Errorf("failed to renew tokens: ", "error", err)
 	}
 
 	err = s.tokensRenewer.Commit(ctx)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to commit transaction: " + err.Error())
+		return "", "", fmt.Errorf("failed to commit transaction: ", "error", err)
 	}
 
 	accessToken, err = auth.CreateToken(userID, viper.GetDuration("auth.access_token_lifetime"))
 	if err != nil {
-		return "", "", fmt.Errorf("failed to create access token: " + err.Error())
+		return "", "", fmt.Errorf("failed to create access token: ", "error", err)
 	}
 
 	return accessToken, refreshToken, err

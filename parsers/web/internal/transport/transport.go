@@ -3,8 +3,6 @@ package transport
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 
@@ -29,7 +27,7 @@ func newRouter() *chi.Mux {
 
 	// TODO: get allowed origins, headers and methods from cfg
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   []string{"chrome-extension://*", "moz-extension://*", "http://localhost*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Set-Cookie", "Refresh", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Authorization"},
@@ -67,8 +65,8 @@ func (t *Transport) RegisterRoutes() {
 
 	t.router.Group(func(r chi.Router) {
 		r.Use(auth.NewAuthMiddleware())
+		r.Post("/api/parser/web", t.processWeb)
 	})
-	t.router.Post("/api/parser/web", t.processWeb)
 }
 
 type processWebRequest struct {
@@ -77,34 +75,20 @@ type processWebRequest struct {
 }
 
 func (t *Transport) processWeb(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("test")
 	var req processWebRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request payload", http.StatusBadRequest)
 		return
 	}
 
-	resp, err := http.Get(req.Url)
-	if err != nil {
-		http.Error(w, "failed to fetch URL", http.StatusInternalServerError)
+	userID, ok := r.Context().Value(auth.CtxUserIDKey).(int64)
+	if !ok {
+		slog.Error("user id not found in context")
+		http.Error(w, "user id not found in context", http.StatusInternalServerError)
 		return
 	}
-	defer resp.Body.Close()
-	doc, err := io.ReadAll(resp.Body)
-	if err != nil {
-		http.Error(w, "failed to read response body", http.StatusInternalServerError)
-		return
-	}
-	req.Document = string(doc)
 
-	// userID, ok := r.Context().Value(auth.CtxUserIDKey).(int64)
-	// if !ok {
-	// 	slog.Error("user id not found in context")
-	// 	http.Error(w, "user id not found in context", http.StatusInternalServerError)
-	// 	return
-	// }
-
-	err = t.service.ProcessHTML(r.Context(), 0, req.Document, req.Url)
+	err := t.service.ProcessHTML(r.Context(), userID, req.Document, req.Url)
 	if err != nil {
 		http.Error(w, "failed to process HTML", http.StatusInternalServerError)
 		return

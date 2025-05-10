@@ -104,7 +104,7 @@ func (r *Storage) GetTx(ctx context.Context) (tx *sqlx.Tx, isNew bool, err error
 	if tx == nil {
 		tx, err = r.DB.BeginTxx(ctx, nil)
 		if err != nil {
-			slog.Error("failed to begin transaction: " + err.Error())
+			slog.Error("failed to begin transaction: ", "error", err)
 			return nil, false, err
 		}
 

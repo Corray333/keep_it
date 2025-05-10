@@ -73,13 +73,13 @@ func (s *Service) ParseMessage(ctx context.Context, message *object.MessagesMess
 			if len(photo.Sizes) > 0 {
 				photoData, err := s.external.GetTgPhoto(&photo)
 				if err != nil {
-					slog.Error("Error getting photo: " + err.Error())
+					slog.Error("Error getting photo: ", "error", err)
 					return err
 				}
 
 				filePath, err := s.fileManger.SaveImage(photoData, "")
 				if err != nil {
-					slog.Error("Error saving photo: " + err.Error())
+					slog.Error("Error saving photo: ", "error", err)
 					return err
 				}
 				note.Cover = filePath
@@ -105,7 +105,7 @@ func (s *Service) ParseMessage(ctx context.Context, message *object.MessagesMess
 				"group_id": groupID,
 			})
 			if err != nil {
-				slog.Error("Error getting group info: " + err.Error())
+				slog.Error("Error getting group info: ", "error", err)
 				return err
 			}
 
@@ -121,13 +121,13 @@ func (s *Service) ParseMessage(ctx context.Context, message *object.MessagesMess
 					if len(photo.Sizes) > 0 {
 						photoData, err := s.external.GetTgPhoto(&photo)
 						if err != nil {
-							slog.Error("Error getting photo: " + err.Error())
+							slog.Error("Error getting photo: ", "error", err)
 							return err
 						}
 
 						filePath, err := s.fileManger.SaveImage(photoData, "")
 						if err != nil {
-							slog.Error("Error saving photo: " + err.Error())
+							slog.Error("Error saving photo: ", "error", err)
 							return err
 						}
 						if note.Cover == "" {

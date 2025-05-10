@@ -1,25 +1,24 @@
 <script lang="ts" setup>
 import type { Checkbox, Image, Note, Text } from '@/entities/note';
+import SlideUpDown from 'vue-slide-up-down';
 import NoteIcon from '../NoteIcon.vue';
 import ContentCheckbox from './content/ContentCheckbox.vue';
 import ContentH1 from './content/ContentH1.vue';
 import ContentImage from './content/ContentImage.vue';
-import TagsBlock from './TagsBlock.vue';
 import ContentP from './content/ContentP.vue';
-import SlideUpDown from 'vue-slide-up-down'
+import TagsBlock from './TagsBlock.vue';
 
-import {  onBeforeMount, onMounted, ref, watch } from 'vue';
-import { Accordion, AccordionContent, AccordionHeader, AccordionPanel, Image as Img, TreeSelect } from 'primevue';
-import { TimeFromUnix } from '@/helpers/time';
-import CheckBox from '../CheckBox.vue';
 import { adjustHexColor } from '@/helpers/color';
-import { useNotesStore } from '@/stores/notes';
 import { NoteService } from '@/service/note';
+import { useNotesStore } from '@/stores/notes';
+import { Image as Img, TreeSelect } from 'primevue';
+import { onBeforeMount, onMounted, ref, watch } from 'vue';
+import CheckBox from '../CheckBox.vue';
 
-import { useI18n } from 'vue-i18n'
-import { loadLocaleMessages } from '@/i18n'
-import CloseIcon from '../icons/close-icon.vue';
+import { loadLocaleMessages } from '@/i18n';
 import { format } from 'date-fns';
+import { useI18n } from 'vue-i18n';
+import CloseIcon from '../icons/close-icon.vue';
 
 const { t, locale } = useI18n()
 
@@ -90,20 +89,20 @@ const showFullHeader = ref(false)
                                 <img :src="note.cover" alt="preview" :style="slotProps.style" @click="slotProps.onClick" />
                             </template>
                         </Img>
-                        
+
                         <div class="note-page-header">
                             <div class="note-page-header-tab" @click="showFullHeader = !showFullHeader">
                                 <div class="note-page-header-label">
-                                    <NoteIcon :icon="note.icon.data" />
+                                    <NoteIcon :icon="note.icon" />
                                     <a :href="note.original" target="_blank"><p>{{ note.title }}</p></a>
                                 </div>
-    
-                                <TagsBlock :tags="note.tags" :noteID="note.id" /> 
+
+                                <TagsBlock :tags="note.tags" :noteID="note.id" />
                             </div>
                             <SlideUpDown :active="showFullHeader">
                                 <div class="note-page-header-more">
                                     <div class="tags-picker">
-                                        <span class="select-tag" v-for="(tag, i) of note.tags" :key="i" 
+                                        <span class="select-tag" v-for="(tag, i) of note.tags" :key="i"
                                             :style="{ backgroundColor: tag.color, color: adjustHexColor(tag.color, 30, 40) }">
                                             <p>{{ tag.text }}</p>
                                             <CloseIcon />
@@ -116,7 +115,7 @@ const showFullHeader = ref(false)
                                 </div>
                             </SlideUpDown>
                         </div>
-            
+
                         <div class="note-page-content">
                             <p v-for="(content_el, i) of note.content" :key="`el${i}`">
                                 <ContentH1 v-if="content_el.type == 'h1'" :element="(content_el as Text)" />
@@ -134,14 +133,14 @@ const showFullHeader = ref(false)
         <div @click="openNote" class="note-card">
             <div class="note-card-header">
                 <CheckBox v-if="selectable" :model-value="selected" :disabled="false" />
-                <NoteIcon :icon="note.icon.data" />
+                <NoteIcon :icon="note.icon" />
                 <a :href="note.original" target="_blank" @click.stop><p>{{ note.title }}</p></a>
                 <TagsBlock :tags="note.tags" :noteID="note.id" class=" justify-end" />
             </div>
-    
+
             <div class="note-card-body">
                 <img v-show="note.cover" class="note-card-body-cover" :src="note.cover">
-    
+
                 <div class="note-card-body-content w-full">
                     <p v-for="(content_el, i) of note.content" :key="`el${i}`">
                         <ContentH1 v-if="content_el.type == 'h1'" :element="(content_el as Text)" />
@@ -191,7 +190,7 @@ const showFullHeader = ref(false)
 
 .note-card-header{
     @apply p-4 border-b-2 border-invert-bg-50 grid gap-2 items-center;
-    grid-template-columns: auto auto 1fr auto;  
+    grid-template-columns: auto auto 1fr auto;
 }
 
 .note-card-body{

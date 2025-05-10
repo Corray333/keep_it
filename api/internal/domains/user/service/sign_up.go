@@ -60,45 +60,45 @@ func (s *UserService) SignUp(ctx context.Context, user entities.User, code strin
 
 	passHash, err := auth.Hash(user.Password)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to hash password: " + err.Error())
+		return 0, "", "", fmt.Errorf("failed to hash password: ", "error", err)
 	}
 	user.Password = passHash
 
 	ctx, err = s.signUper.Begin(ctx)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to begin transaction: " + err.Error())
+		return 0, "", "", fmt.Errorf("failed to begin transaction: ", "error", err)
 	}
 	defer s.signUper.Rollback(ctx)
 
 	userID, err = s.signUper.NewUser(ctx, user)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to insert user: " + err.Error())
+		return 0, "", "", fmt.Errorf("failed to insert user: ", "error", err)
 	}
 
 	refreshToken, err = auth.CreateToken(userID, viper.GetDuration("auth.refresh_token_lifetime"))
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to create access token: " + err.Error())
+		return 0, "", "", fmt.Errorf("failed to create access token: ", "error", err)
 	}
 
 	creds, err := auth.ExtractCredentials(refreshToken)
 	if err != nil {
-		slog.Error("failed to extract credentials: " + err.Error())
+		slog.Error("failed to extract credentials: ", "error", err)
 		return 0, "", "", err
 	}
 
 	err = s.signUper.SetRefreshToken(ctx, userID, refreshToken, creds.Exp)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to set refresh token: " + err.Error())
+		return 0, "", "", fmt.Errorf("failed to set refresh token: ", "error", err)
 	}
 
 	err = s.signUper.Commit(ctx)
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to commit transaction: " + err.Error())
+		return 0, "", "", fmt.Errorf("failed to commit transaction: ", "error", err)
 	}
 
 	accessToken, err = auth.CreateToken(userID, viper.GetDuration("auth.access_token_lifetime"))
 	if err != nil {
-		return 0, "", "", fmt.Errorf("failed to create access token: " + err.Error())
+		return 0, "", "", fmt.Errorf("failed to create access token: ", "error", err)
 	}
 
 	return userID, accessToken, refreshToken, err

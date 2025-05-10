@@ -25,7 +25,7 @@ func (e *External) GetTgPhoto(photo *object.PhotosPhoto) (io.Reader, error) {
 
 	resp, err := http.Get(fileURL)
 	if err != nil {
-		slog.Error("error loading file: " + err.Error())
+		slog.Error("error loading file: ", "error", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -33,7 +33,7 @@ func (e *External) GetTgPhoto(photo *object.PhotosPhoto) (io.Reader, error) {
 	var photoFile bytes.Buffer
 	_, err = io.Copy(&photoFile, resp.Body)
 	if err != nil {
-		slog.Error("error copying file: " + err.Error())
+		slog.Error("error copying file: ", "error", err)
 		return nil, err
 	}
 

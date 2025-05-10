@@ -44,7 +44,7 @@ func (t *Transport) Run() {
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, we failed to keep it😥")
 				_, err := t.Bot.Send(msg)
 				if err != nil {
-					slog.Error("Failed to send error message: " + err.Error())
+					slog.Error("Failed to send error message: ", "error", err)
 				}
 			}
 		}()

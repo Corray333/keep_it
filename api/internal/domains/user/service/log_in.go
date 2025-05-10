@@ -42,7 +42,7 @@ func (s *UserService) LogIn(ctx context.Context, user *entities.User, code strin
 
 	fullUser, err = s.logIner.GetUser(ctx, user)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("failed to login user: " + err.Error())
+		return nil, "", "", fmt.Errorf("failed to login user: ", "error", err)
 	}
 
 	if !auth.Verify(fullUser.Password, user.Password) {
@@ -53,22 +53,22 @@ func (s *UserService) LogIn(ctx context.Context, user *entities.User, code strin
 
 	refreshToken, err = auth.CreateToken(fullUser.ID, viper.GetDuration("auth.refresh_token_lifetime"))
 	if err != nil {
-		return nil, "", "", fmt.Errorf("failed to create access token: " + err.Error())
+		return nil, "", "", fmt.Errorf("failed to create access token: ", "error", err)
 	}
 	creds, err := auth.ExtractCredentials(refreshToken)
 	if err != nil {
-		slog.Error("failed to extract credentials: " + err.Error())
+		slog.Error("failed to extract credentials: ", "error", err)
 		return nil, "", "", err
 	}
 
 	err = s.logIner.SetRefreshToken(ctx, fullUser.ID, refreshToken, creds.Exp)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("failed to set refresh token: " + err.Error())
+		return nil, "", "", fmt.Errorf("failed to set refresh token: ", "error", err)
 	}
 
 	accessToken, err = auth.CreateToken(fullUser.ID, viper.GetDuration("auth.access_token_lifetime"))
 	if err != nil {
-		return nil, "", "", fmt.Errorf("failed to create access token: " + err.Error())
+		return nil, "", "", fmt.Errorf("failed to create access token: ", "error", err)
 	}
 
 	return fullUser, accessToken, refreshToken, err

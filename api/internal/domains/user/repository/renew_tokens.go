@@ -18,13 +18,13 @@ func (s *UserRepository) RenewTokens(ctx context.Context, userID int64, oldRefre
 
 	res, err := tx.Exec(`UPDATE user_token SET token = $1, expires_at = $2 WHERE user_id = $3 AND token = $4;`, newRefreshToken, expiresAt, userID, oldRefreshToken)
 	if err != nil {
-		slog.Error("error updating refresh token: " + err.Error())
+		slog.Error("error updating refresh token: ", "error", err)
 		return err
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		slog.Error("error while getting rows affected updating tokens: " + err.Error())
+		slog.Error("error while getting rows affected updating tokens: ", "error", err)
 		return err
 	}
 

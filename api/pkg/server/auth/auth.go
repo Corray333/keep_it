@@ -30,7 +30,7 @@ func NewAuthMiddleware() func(next http.Handler) http.Handler {
 			creds, err := VerifyToken(strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
 			if err != nil {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				slog.Error("Unauthorized: " + err.Error())
+				slog.Error("Unauthorized: ", "error", err)
 				return
 			}
 

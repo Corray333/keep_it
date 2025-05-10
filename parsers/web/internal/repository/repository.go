@@ -72,6 +72,7 @@ func (s *Storage) NewNote(ctx context.Context, note *entities.NewNoteMessage) er
 
 	encoded, err := json.Marshal(note)
 	if err != nil {
+		slog.Error("Failed to marshal note", "error", err)
 		return err
 	}
 
@@ -81,9 +82,6 @@ func (s *Storage) NewNote(ctx context.Context, note *entities.NewNoteMessage) er
 		Value: sarama.StringEncoder(encoded),
 	}
 
-	fmt.Println()
-	fmt.Println("Note: ", note)
-	fmt.Println()
 	_, _, err = s.Kafka.SendMessage(msg)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to produce message: "+err.Error())
@@ -97,7 +95,7 @@ func (s *Storage) SaveNote(ctx context.Context, creationDate, chatID int64, note
 	fmt.Println("Zametka: ", note.ContentDecoded)
 	jsonData, err := json.Marshal(note)
 	if err != nil {
-		slog.Error("failed to marshal note: " + err.Error())
+		slog.Error("failed to marshal note: ", "error", err)
 		return err
 	}
 
@@ -119,13 +117,13 @@ func (s *Storage) GetNotes(ctx context.Context, creationDate, chtID int64) ([]*e
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
-		slog.Error("failed to get notes: " + err.Error())
+		slog.Error("failed to get notes: ", "error", err)
 		return nil, err
 	}
 
 	notes, err := notesCmd.Result()
 	if err != nil {
-		slog.Error("failed to get notes: " + err.Error())
+		slog.Error("failed to get notes: ", "error", err)
 		return nil, err
 	}
 
@@ -141,7 +139,7 @@ func (s *Storage) GetNotes(ctx context.Context, creationDate, chtID int64) ([]*e
 	}
 
 	if del, err := delCmd.Result(); err != nil {
-		slog.Error("failed to delete notes: " + err.Error())
+		slog.Error("failed to delete notes: ", "error", err)
 		return nil, err
 	} else if del == 0 {
 		return nil, nil

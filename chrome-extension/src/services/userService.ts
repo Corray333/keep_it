@@ -66,6 +66,15 @@ export class UserTransport {
             console.log(error)
         }
     }
+
+    static processPage = async (url: string, page: string) => {
+        await api.post("/parser/web", {
+            url: url,
+            document: page
+        }, {
+            useAuth: true
+        }as CustomAxiosRequestConfig)
+    }
 }
 
 export {api, logError}

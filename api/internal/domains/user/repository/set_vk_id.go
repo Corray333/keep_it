@@ -16,13 +16,13 @@ func (r *UserRepository) SetVKID(ctx context.Context, userID int64, vkID int64) 
 
 	_, err = tx.Exec(`UPDATE users SET vk_id = NULL WHERE vk_id = $1;`, vkID)
 	if err != nil {
-		slog.Error("error setting refresh token: " + err.Error())
+		slog.Error("error setting refresh token: ", "error", err)
 		return err
 	}
 
 	_, err = tx.Exec(`UPDATE users SET vk_id = $1 WHERE user_id = $2;`, vkID, userID)
 	if err != nil {
-		slog.Error("error setting refresh token: " + err.Error())
+		slog.Error("error setting refresh token: ", "error", err)
 		return err
 	}
 

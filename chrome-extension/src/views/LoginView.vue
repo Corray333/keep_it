@@ -15,6 +15,4 @@ const accStore = useAccountStore()
 
 <style scoped>
 
-
-
 </style>

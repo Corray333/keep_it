@@ -36,7 +36,7 @@ func newRouter() *chi.Mux {
 
 	// TODO: get allowed origins, headers and methods from cfg
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"chrome-extension://miabcjmamdaepmoogjobhlkonpcfimom", "http://localhost*"},
+		AllowedOrigins:   []string{"chrome-extension://miabcjmamdaepmoogjobhlkonpcfimom", "moz-extension://*", "http://localhost*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Set-Cookie", "Refresh", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Authorization"},

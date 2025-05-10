@@ -23,7 +23,7 @@ func (e *External) GetTgPhoto(photos []tgbotapi.PhotoSize) ([]byte, error) {
 	// Get the file URL
 	file, err := e.Bot.GetFile(tgbotapi.FileConfig{FileID: photo.FileID})
 	if err != nil {
-		slog.Error("error getting file: " + err.Error())
+		slog.Error("error getting file: ", "error", err)
 		return nil, err
 	}
 
@@ -31,7 +31,7 @@ func (e *External) GetTgPhoto(photos []tgbotapi.PhotoSize) ([]byte, error) {
 	fileURL := file.Link(e.Bot.Token)
 	resp, err := http.Get(fileURL)
 	if err != nil {
-		slog.Error("error loading file: " + err.Error())
+		slog.Error("error loading file: ", "error", err)
 		return nil, err
 	}
 	defer resp.Body.Close()

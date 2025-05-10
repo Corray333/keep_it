@@ -67,7 +67,7 @@ func (t *UserTransport) signUp(w http.ResponseWriter, r *http.Request) {
 
 	var req SignUpRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Error("failed to decode request: " + err.Error())
+		slog.Error("failed to decode request: ", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -79,7 +79,7 @@ func (t *UserTransport) signUp(w http.ResponseWriter, r *http.Request) {
 
 	userID, accessToken, refreshToken, err := t.service.SignUp(ctx, user, req.Code)
 	if err != nil {
-		slog.Error("failed to sign up: " + err.Error())
+		slog.Error("failed to sign up: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -90,7 +90,7 @@ func (t *UserTransport) signUp(w http.ResponseWriter, r *http.Request) {
 	creds, err := auth.ExtractCredentials(refreshToken)
 	if err != nil {
 		http.Error(w, "Failed to insert user", http.StatusInternalServerError)
-		slog.Error("Failed to insert user: " + err.Error())
+		slog.Error("Failed to insert user: ", "error", err)
 		return
 	}
 
@@ -117,7 +117,7 @@ func (t *UserTransport) signUp(w http.ResponseWriter, r *http.Request) {
 func respondJSON(w http.ResponseWriter, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(v); err != nil {
-		slog.Error("failed to encode response: " + err.Error())
+		slog.Error("failed to encode response: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -138,7 +138,7 @@ func (t *UserTransport) logIn(w http.ResponseWriter, r *http.Request) {
 
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Error("failed to decode request: " + err.Error())
+		slog.Error("failed to decode request: ", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -189,21 +189,21 @@ func (t *UserTransport) renewTokens(w http.ResponseWriter, r *http.Request) {
 
 	oldRefreshToken, err := r.Cookie("Refresh")
 	if err != nil {
-		slog.Error("failed to get cookie: " + err.Error())
+		slog.Error("failed to get cookie: ", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	creds, err := auth.ExtractCredentials(oldRefreshToken.Value)
 	if err != nil {
-		slog.Error("failed to extract user id: " + err.Error())
+		slog.Error("failed to extract user id: ", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	accessToken, refreshToken, err := t.service.RenewTokens(ctx, creds.ID, oldRefreshToken.Value)
 	if err != nil {
-		slog.Error("failed to renew tokens: " + err.Error())
+		slog.Error("failed to renew tokens: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -211,7 +211,7 @@ func (t *UserTransport) renewTokens(w http.ResponseWriter, r *http.Request) {
 	creds, err = auth.ExtractCredentials(refreshToken)
 	if err != nil {
 		http.Error(w, "Failed to insert user", http.StatusInternalServerError)
-		slog.Error("Failed to insert user: " + err.Error())
+		slog.Error("Failed to insert user: ", "error", err)
 		return
 	}
 	cookie := http.Cookie{
@@ -240,7 +240,7 @@ func (t *UserTransport) findUser(w http.ResponseWriter, r *http.Request) {
 
 	var req FindUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Error("failed to decode request: " + err.Error())
+		slog.Error("failed to decode request: ", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -254,7 +254,7 @@ func (t *UserTransport) findUser(w http.ResponseWriter, r *http.Request) {
 			respondJSON(w, nil)
 			return
 		}
-		slog.Error("failed to find user: " + err.Error())
+		slog.Error("failed to find user: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -280,14 +280,14 @@ func (t *UserTransport) codeExists(w http.ResponseWriter, r *http.Request) {
 
 	var req CodeExistsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Error("failed to decode request: " + err.Error())
+		slog.Error("failed to decode request: ", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	exists, err := t.service.CodeExists(ctx, req.Username, req.Syn)
 	if err != nil {
-		slog.Error("failed to check code: " + err.Error())
+		slog.Error("failed to check code: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -306,7 +306,7 @@ func (t *UserTransport) linkVK(w http.ResponseWriter, r *http.Request) {
 
 	var req LinkVKRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Error("failed to decode request: " + err.Error())
+		slog.Error("failed to decode request: ", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -319,7 +319,7 @@ func (t *UserTransport) linkVK(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := t.service.SetVKID(ctx, userID, req.VKIDToken); err != nil {
-		slog.Error("failed to link VK ID: " + err.Error())
+		slog.Error("failed to link VK ID: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

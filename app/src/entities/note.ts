@@ -29,10 +29,10 @@ export class NoteTemplate implements Note {
     type: number = 0
     checked: boolean = false
     categoryId: string = ''
-    icon: Icon = { type: '', data: '' }
+    icon: Icon = { type: IconType.IMG, data: '' }
 
     constructor() {
-        
+
     }
 }
 
@@ -45,14 +45,19 @@ export interface Tag {
     color: string
 }
 
+export const enum IconType {
+  SVG = 'svg',
+  IMG = 'img',
+}
+
 export interface Icon {
-    type: string
+    type: IconType
     data: string
 }
 
 export interface RichText{
     plain_text: string
-    meta: TextMeta[] 
+    meta: TextMeta[]
 }
 
 export interface Text{

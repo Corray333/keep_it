@@ -10,7 +10,6 @@ onMounted(()=>
 </script>
 
 <template>
-  <p>{{ route.path }}</p>
   <RouterView />
 </template>
 

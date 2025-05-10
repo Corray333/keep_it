@@ -3,7 +3,6 @@ package transport
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -113,20 +112,18 @@ func (t *NoteTransport) Run() {
 					if msg != nil {
 						note := &entities.NewNoteMessage{}
 						if err := json.Unmarshal(msg.Value, note); err != nil {
-							log.Printf("Failed to unmarshal message: %v", err)
+							slog.Error("Failed to unmarshal message", "error", err)
 							continue
 						}
 
-						fmt.Println("Received message: ", string(msg.Value))
-
 						if _, err := t.service.CreateNote(context.Background(), note); err != nil {
-							slog.Error("Failed to create note: " + err.Error())
+							slog.Error("Failed to create note", "error", err)
 							continue
 						}
 
 					}
 				case err := <-pc.Errors():
-					slog.Error("Failed to consume message: " + err.Error())
+					slog.Error("Failed to consume message", "error", err)
 				}
 			}
 		}(partition)
@@ -153,7 +150,7 @@ func (t *NoteTransport) createNote(w http.ResponseWriter, r *http.Request) {
 
 	var req CreateNoteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Error("failed to decode request: " + err.Error())
+		slog.Error("failed to decode request: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -168,7 +165,7 @@ func (t *NoteTransport) createNote(w http.ResponseWriter, r *http.Request) {
 
 	noteID, err := t.service.CreateNote(ctx, newNoteMsg)
 	if err != nil {
-		slog.Error("failed to create note: " + err.Error())
+		slog.Error("failed to create note: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -177,7 +174,7 @@ func (t *NoteTransport) createNote(w http.ResponseWriter, r *http.Request) {
 		NoteID: noteID,
 	}
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		slog.Error("failed to encode response: " + err.Error())
+		slog.Error("failed to encode response: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -203,13 +200,13 @@ func (t *NoteTransport) getNote(w http.ResponseWriter, r *http.Request) {
 
 	note, err := t.service.GetNoteByID(ctx, userID, noteID)
 	if err != nil {
-		slog.Error("failed to get note: " + err.Error())
+		slog.Error("failed to get note: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(note); err != nil {
-		slog.Error("failed to encode response: " + err.Error())
+		slog.Error("failed to encode response: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -251,13 +248,13 @@ func (t *NoteTransport) getNotes(w http.ResponseWriter, r *http.Request) {
 
 	notes, err := t.service.GetNotes(ctx, userID, offset, filters)
 	if err != nil {
-		slog.Error("failed to get notes: " + err.Error())
+		slog.Error("failed to get notes: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(notes); err != nil {
-		slog.Error("failed to encode response: " + err.Error())
+		slog.Error("failed to encode response: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -281,13 +278,13 @@ func (t *NoteTransport) getNotes(w http.ResponseWriter, r *http.Request) {
 
 // 	notes, err := t.service.GetNewNotes(ctx, userID, offset)
 // 	if err != nil {
-// 		slog.Error("failed to get notes: " + err.Error())
+// 		slog.Error("failed to get notes: ", "error", err)
 // 		helpers.SendError(w, err)
 // 		return
 // 	}
 
 // 	if err := json.NewEncoder(w).Encode(notes); err != nil {
-// 		slog.Error("failed to encode response: " + err.Error())
+// 		slog.Error("failed to encode response: ", "error", err)
 // 		helpers.SendError(w, err)
 // 		return
 // 	}
@@ -302,7 +299,7 @@ func (t *NoteTransport) createTag(w http.ResponseWriter, r *http.Request) {
 
 	var req CreateTagRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Error("failed to decode request: " + err.Error())
+		slog.Error("failed to decode request: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -318,7 +315,7 @@ func (t *NoteTransport) createTag(w http.ResponseWriter, r *http.Request) {
 
 	err := t.service.CreateTag(ctx, &req.Tag)
 	if err != nil {
-		slog.Error("failed to create tag: " + err.Error())
+		slog.Error("failed to create tag: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -341,7 +338,7 @@ func (t *NoteTransport) deleteTag(w http.ResponseWriter, r *http.Request) {
 		Owner: userID,
 	})
 	if err != nil {
-		slog.Error("failed to delete tag: " + err.Error())
+		slog.Error("failed to delete tag: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -365,13 +362,13 @@ func (t *NoteTransport) getTags(w http.ResponseWriter, r *http.Request) {
 
 	tags, err := t.service.GetTags(ctx, userID)
 	if err != nil {
-		slog.Error("failed to get tags: " + err.Error())
+		slog.Error("failed to get tags: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(tags); err != nil {
-		slog.Error("failed to encode response: " + err.Error())
+		slog.Error("failed to encode response: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -394,7 +391,7 @@ func (t *NoteTransport) addTagToNote(w http.ResponseWriter, r *http.Request) {
 
 	var req AddTagToNoteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		slog.Error("failed to decode request: " + err.Error())
+		slog.Error("failed to decode request: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -410,7 +407,7 @@ func (t *NoteTransport) addTagToNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := t.service.AddTagToNote(ctx, &req.Tag, noteID, req.IsNew); err != nil {
-		slog.Error("failed to add tag to note: " + err.Error())
+		slog.Error("failed to add tag to note: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -439,7 +436,7 @@ func (t *NoteTransport) deleteTagFromNote(w http.ResponseWriter, r *http.Request
 		Text:  tagText,
 		Owner: userID,
 	}, noteID); err != nil {
-		slog.Error("failed to remove tag from note: " + err.Error())
+		slog.Error("failed to remove tag from note: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -472,7 +469,7 @@ func (t *NoteTransport) deleteNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := t.service.DeleteNotes(ctx, userID, noteIDs); err != nil {
-		slog.Error("failed to remove note: " + err.Error())
+		slog.Error("failed to remove note: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}
@@ -500,7 +497,7 @@ func (t *NoteTransport) setCategory(w http.ResponseWriter, r *http.Request) {
 	categoryID := chi.URLParam(r, "category_id")
 
 	if err := t.service.SetCategory(ctx, userID, noteID, categoryID); err != nil {
-		slog.Error("failed to set note category: " + err.Error())
+		slog.Error("failed to set note category: ", "error", err)
 		helpers.SendError(w, err)
 		return
 	}

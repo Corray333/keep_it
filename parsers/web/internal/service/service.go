@@ -2,13 +2,18 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
+	"errors"
+	"log/slog"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Corray333/keep_it/parsers/web/internal/entities"
 	"github.com/PuerkitoBio/goquery"
 )
+
+var NoteWebIcon = json.RawMessage(`{"data": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 14 14\"><g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"1\"><path d=\"M7 13.5a6.5 6.5 0 1 0 0-13a6.5 6.5 0 0 0 0 13M.5 7h13\"/><path d=\"M9.5 7A11.22 11.22 0 0 1 7 13.5A11.22 11.22 0 0 1 4.5 7A11.22 11.22 0 0 1 7 .5A11.22 11.22 0 0 1 9.5 7\"/></g></svg>", "type": "svg"}`)
 
 type fileManager interface {
 	SaveFile(ctx context.Context, file []byte, name string) error
@@ -16,7 +21,6 @@ type fileManager interface {
 
 type repository interface {
 	NewNote(ctx context.Context, note *entities.NewNoteMessage) error
-
 	SaveNote(ctx context.Context, creationDate, chatID int64, note *entities.Note) error
 	GetNotes(ctx context.Context, creationDate, chtID int64) ([]*entities.Note, error)
 }
@@ -26,6 +30,7 @@ type Service struct {
 	repo       repository
 }
 
+// New создает сервис
 func New(repo repository, fileManager fileManager) *Service {
 	return &Service{
 		repo:       repo,
@@ -33,61 +38,18 @@ func New(repo repository, fileManager fileManager) *Service {
 	}
 }
 
-func isContentBlock(s *goquery.Selection) bool {
-	// Список классов, указывающих на контент
-	contentClasses := []string{"article", "Article", "blog", "content", "post", "main-content", "story"}
-	// Список классов и тегов, указывающих на служебные блоки
-	nonContentClasses := []string{"nav", "navbar", "footer", "sidebar", "menu", "button", "widget", "ad", "advertisement"}
-	nonContentTags := []string{"nav", "footer", "aside", "header"}
-
-	// Проверяем тег <article>
-	if goquery.NodeName(s) == "article" {
-		return true
-	}
-
-	// Проверяем классы
-	classStr, exists := s.Attr("class")
-	if exists {
-		classes := strings.Fields(classStr)
-		for _, class := range classes {
-			for _, contentClass := range contentClasses {
-				if strings.Contains(class, contentClass) {
-					return true
-				}
-			}
-			for _, nonContentClass := range nonContentClasses {
-				if strings.Contains(class, nonContentClass) {
-					return false
-				}
-			}
-		}
-	}
-
-	// Проверяем тег на служебность
-	tagName := goquery.NodeName(s)
-	for _, nonContentTag := range nonContentTags {
-		if tagName == nonContentTag {
-			return false
-		}
-	}
-
-	// Эвристика: если блок содержит много текста (более 100 символов), считаем его контентным
-	text := strings.TrimSpace(s.Text())
-	if len(text) > 100 {
-		return true
-	}
-
-	return false
-}
-
+// ProcessHTML обрабатывает HTML, конвертируя в заметку
 func (s *Service) ProcessHTML(ctx context.Context, userID int64, document string, url string) error {
-	note, err := parseHTMLToNote(document, url)
+	document = "<div>" + document + "</div>"
+	note, err := parseHTMLToNote(ctx, document, url)
 	if err != nil {
+		slog.Error("Error processing page", "error", err)
 		return err
 	}
-
-	fmt.Println(note)
-	return nil
+	note.CreatorID = userID
+	note.Source = "web"
+	note.Original = url
+	note.Icon = NoteWebIcon
 
 	if err := s.repo.NewNote(ctx, &entities.NewNoteMessage{
 		Note:   *note,
@@ -96,123 +58,213 @@ func (s *Service) ProcessHTML(ctx context.Context, userID int64, document string
 	}); err != nil {
 		return err
 	}
-
 	return nil
-
 }
 
-// Функция парсинга HTML в структуру Note
-func parseHTMLToNote(document string, url string) (*entities.Note, error) {
-	// Создаем goquery документ из строки HTML
+// parseHTMLToNote преобразует HTML и URL в entities.Note
+func parseHTMLToNote(ctx context.Context, document string, url string) (*entities.Note, error) {
+	if strings.TrimSpace(document) == "" {
+		return nil, errors.New("empty document")
+	}
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(document))
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse HTML: %v", err)
+		return nil, err
 	}
 
-	// Массив для элементов контента
-	var contentElements []interface{}
+	note := &entities.Note{
+		CreatedAt:      time.Now(),
+		ContentDecoded: make([]any, 0),
+	}
 
-	// Находим все потенциальные контентные блоки
-	doc.Find("*").Each(func(i int, s *goquery.Selection) {
-		if isContentBlock(s) {
-			// Парсим только внутри этого блока
-			s.Find("h1, h2, h3, p").Each(func(i int, sel *goquery.Selection) {
-				tagName := goquery.NodeName(sel)
-				var elemType entities.ElementType
-				switch tagName {
-				case "h1":
-					elemType = entities.ElementTypeH1
-				case "h2":
-					elemType = entities.ElementTypeH2
-				case "h3":
-					elemType = entities.ElementTypeH3
-				case "p":
-					elemType = entities.ElementTypeParagraph
-				}
+	// Заголовок страницы
+	title := strings.TrimSpace(doc.Find("head title").First().Text())
+	if title != "" {
+		note.Title = title
+	}
 
-				// Создаем RichText элемент
-				text := strings.TrimSpace(sel.Text())
-				richText := entities.RichText{
-					PlainText: text,
-					Meta:      []entities.Meta{},
-				}
-
-				// Проверяем форматирование
-				sel.Children().Each(func(i int, child *goquery.Selection) {
-					childName := goquery.NodeName(child)
-					childText := child.Text()
-					offset := strings.Index(text, childText)
-					length := len(childText)
-
-					meta := entities.Meta{
-						Offset: offset,
-						Length: length,
-					}
-
-					switch childName {
-					case "b", "strong":
-						meta.Weight = "bold"
-					case "i", "em":
-						meta.Italic = true
-					case "u":
-						meta.Underline = true
-					case "strike", "s":
-						meta.Strikethrough = true
-					case "a":
-						if href, exists := child.Attr("href"); exists {
-							meta.Link = href
-						}
-					}
-
-					if offset >= 0 && length > 0 {
-						richText.Meta = append(richText.Meta, meta)
-					}
-				})
-
-				contentElements = append(contentElements, entities.TextElement{
-					Type:     elemType,
-					RichText: richText,
-				})
+	doc.Children().Each(func(i int, sel *goquery.Selection) {
+		if shouldSkip(sel) {
+			return
+		}
+		switch goquery.NodeName(sel) {
+		case "h1", "h2", "h3", "p", "div", "section", "article":
+			appendTextWithMeta(note, sel, goquery.NodeName(sel))
+			sel.Find("img").Each(func(_ int, img *goquery.Selection) {
+				appendImage(note, img)
 			})
-
-			// Парсим изображения
-			s.Find("img").Each(func(i int, sel *goquery.Selection) {
-				src, _ := sel.Attr("src")
-				widthStr, _ := sel.Attr("width")
-				align, _ := sel.Attr("align")
-
-				width := 0
-				if widthStr != "" {
-					fmt.Sscanf(widthStr, "%d", &width)
+		case "ul", "ol":
+			sel.Find("li").Each(func(_ int, li *goquery.Selection) {
+				liText := strings.TrimSpace(li.Text())
+				if liText != "" {
+					// list items treated as paragraphs
+					fake := &goquery.Selection{Nodes: li.Nodes}
+					appendTextWithMeta(note, fake, "p")
 				}
-
-				if align == "" {
-					align = "left"
+			})
+		case "img":
+			appendImage(note, sel)
+		default:
+			sel.Children().Each(func(_ int, child *goquery.Selection) {
+				if !shouldSkip(child) {
+					parseHTMLChild(ctx, note, child)
 				}
-
-				contentElements = append(contentElements, entities.ImgElement{
-					Type:  entities.ElementTypeImage,
-					Src:   src,
-					Width: width,
-					Align: align,
-				})
 			})
 		}
 	})
 
-	// Создаем заметку
-	note := &entities.Note{
-		Source:         entities.Source(url),
-		Title:          doc.Find("title").Text(),
-		ContentDecoded: contentElements,
+	raw, err := json.Marshal(note.ContentDecoded)
+	if err != nil {
+		return nil, err
 	}
-
-	// Сериализуем content в JSON
-	// contentJSON, err := json.Marshal(contentElements)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to marshal content: %v", err)
-	// }
-	// note.Content = json.RawMessage(contentJSON)
-
+	note.Content = raw
 	return note, nil
+}
+
+// parseHTMLChild рекурсивно обходит вложенные элементы
+func parseHTMLChild(ctx context.Context, note *entities.Note, sel *goquery.Selection) {
+	if shouldSkip(sel) {
+		return
+	}
+	switch goquery.NodeName(sel) {
+	case "h1", "h2", "h3", "p":
+		if goquery.NodeName(sel) == "h1" && note.Title == "" {
+			note.Title = strings.TrimSpace(sel.Text())
+		}
+		appendTextWithMeta(note, sel, goquery.NodeName(sel))
+	case "img":
+		appendImage(note, sel)
+	case "ul", "ol":
+		sel.Find("li").Each(func(_ int, li *goquery.Selection) {
+			fake := &goquery.Selection{Nodes: li.Nodes}
+			appendTextWithMeta(note, fake, "p")
+		})
+	default:
+		if sel.Children().Length() > 0 {
+			sel.Children().Each(func(_ int, c *goquery.Selection) {
+				parseHTMLChild(ctx, note, c)
+			})
+		}
+	}
+}
+
+// appendTextWithMeta добавляет текстовый элемент с метаинформацией (ссылки, жирность, курсив)
+func appendTextWithMeta(note *entities.Note, sel *goquery.Selection, tag string) {
+	text := strings.TrimSpace(sel.Text())
+	if text == "" {
+		return
+	}
+	// базовый элемент типа
+	elemType := "p"
+	switch tag {
+	case "h1", "h2", "h3":
+		elemType = tag
+	}
+	// собрать метаинформацию
+	meta := make([]entities.Meta, 0)
+	// искать ссылки
+	sel.Find("a").Each(func(_ int, a *goquery.Selection) {
+		href, ok := a.Attr("href")
+		if !ok || strings.TrimSpace(href) == "" {
+			return
+		}
+		anchor := strings.TrimSpace(a.Text())
+		if anchor == "" {
+			return
+		}
+		// найти позицию
+		idx := strings.Index(text, anchor)
+		if idx >= 0 {
+			meta = append(meta, entities.Meta{
+				Offset: idx,
+				Length: len(anchor),
+				Link:   href,
+			})
+		}
+	})
+	// найти жирный текст
+	sel.Find("strong, b").Each(func(_ int, b *goquery.Selection) {
+		bold := strings.TrimSpace(b.Text())
+		idx := strings.Index(text, bold)
+		if idx >= 0 {
+			meta = append(meta, entities.Meta{
+				Offset: idx,
+				Length: len(bold),
+				Weight: "bold",
+			})
+		}
+	})
+	// найти курсив
+	sel.Find("em, i").Each(func(_ int, iel *goquery.Selection) {
+		ital := strings.TrimSpace(iel.Text())
+		idx := strings.Index(text, ital)
+		if idx >= 0 {
+			meta = append(meta, entities.Meta{
+				Offset: idx,
+				Length: len(ital),
+				Italic: true,
+			})
+		}
+	})
+	// добавить элемент
+	note.ContentDecoded = append(note.ContentDecoded, entities.TextElement{
+		Type:     entities.ElementType(elemType),
+		RichText: entities.RichText{PlainText: text, Meta: meta},
+	})
+}
+
+// shouldSkip определяет, нужно ли пропустить элемент
+func shouldSkip(s *goquery.Selection) bool {
+	skipTags := map[string]struct{}{"nav": {}, "aside": {}, "footer": {}, "header": {},
+		"button": {}, "form": {}, "input": {}, "select": {},
+		"option": {}, "svg": {}, "canvas": {}, "script": {},
+	}
+	tagName := strings.ToLower(goquery.NodeName(s))
+	if _, found := skipTags[tagName]; found {
+		return true
+	}
+	skips := []string{"nav", "menu", "footer", "header", "aside", "btn", "button", "icon", "ads", "share", "sidebar", "navbar", "pagination", "dropdown", "popup"}
+	if class, _ := s.Attr("class"); class != "" {
+		lower := strings.ToLower(class)
+		for _, sk := range skips {
+			if strings.Contains(lower, sk) {
+				return true
+			}
+		}
+	}
+	if id, _ := s.Attr("id"); id != "" {
+		lower := strings.ToLower(id)
+		for _, sk := range skips {
+			if strings.Contains(lower, sk) {
+				return true
+			}
+		}
+	}
+	if style, _ := s.Attr("style"); style != "" && (strings.Contains(style, "display:none") || strings.Contains(style, "visibility:hidden")) {
+		return true
+	}
+	return false
+}
+
+// appendImage добавляет изображение
+func appendImage(note *entities.Note, s *goquery.Selection) {
+	src, ok := s.Attr("src")
+	if !ok || strings.TrimSpace(src) == "" {
+		return
+	}
+	width := 0
+	if w, ok := s.Attr("width"); ok {
+		if val, err := strconv.Atoi(w); err == nil {
+			width = val
+		}
+	}
+	align := ""
+	if a, ok := s.Attr("align"); ok {
+		align = a
+	}
+	note.ContentDecoded = append(note.ContentDecoded, entities.ImgElement{
+		Type:  entities.ElementTypeImage,
+		Src:   src,
+		Width: width,
+		Align: align,
+	})
 }

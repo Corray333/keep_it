@@ -11,7 +11,7 @@ func (s *UserRepository) NewUser(ctx context.Context, user entities.User) (int64
 
 	tx, isNew, err := s.GetTx(ctx)
 	if err != nil {
-		slog.Error("failed to get transaction: " + err.Error())
+		slog.Error("failed to get transaction: ", "error", err)
 		return -1, err
 	}
 	if isNew {

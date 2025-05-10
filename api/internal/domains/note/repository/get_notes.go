@@ -57,8 +57,6 @@ func (r *NoteRepository) GetNotes(ctx context.Context, userID int64, offset int,
 		noteIDs = append(noteIDs, note.NoteID)
 	}
 
-	fmt.Println(notes)
-
 	tags := []tagDB{}
 	if len(noteIDs) > 0 {
 		placeholders := make([]string, len(noteIDs))

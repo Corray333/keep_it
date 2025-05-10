@@ -1,22 +1,28 @@
 <script lang="ts" setup>
+import { IconType, type Icon } from '@/entities/note';
+
 
 defineProps<{
-    icon: string
+  icon: Icon
 }>()
 
 </script>
 
 <template>
-    <img class="icon" :src="icon" alt="">
+  <img v-if="icon.type == IconType.IMG" class="icon" :src="icon.data" alt="">
+  <div v-if="icon.type == IconType.SVG" v-html="icon.data" class="icon"></div>
 </template>
 
 
-<style scoped>
+<style>
 
 .icon{
-    width: 1.5em;
-    height: 1.5em;
-    display: inline;
+  @apply inline text-2xl;
 }
-
+.icon>svg {
+  @apply text-invert-bg;
+  width: 1em;
+  height: 1em;
+  display: inline;
+}
 </style>

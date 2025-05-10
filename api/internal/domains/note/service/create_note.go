@@ -12,7 +12,7 @@ import (
 
 type noteCreater interface {
 	storage.Transactioner
-	CreateNote(ctx context.Context, note *entities.Note) (noteID uuid.UUID, err error)
+	CreateNote(ctx context.Context, note entities.Note) (noteID uuid.UUID, err error)
 }
 
 func (c *NoteService) CreateNote(ctx context.Context, note *entities.NewNoteMessage) (noteID uuid.UUID, err error) {
@@ -48,7 +48,7 @@ func (c *NoteService) CreateNote(ctx context.Context, note *entities.NewNoteMess
 		note.Note.CreatorID = user.ID
 	}
 
-	noteID, err = c.noteCreater.CreateNote(ctx, &note.Note)
+	noteID, err = c.noteCreater.CreateNote(ctx, note.Note)
 	if err != nil {
 		return uuid.Nil, err
 	}

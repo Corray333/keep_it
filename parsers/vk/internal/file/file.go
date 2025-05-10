@@ -29,7 +29,7 @@ func (f *FileManager) SaveImage(img io.Reader, name string) (string, error) {
 	filePath := os.Getenv("FILE_PATH") + "/images/" + name + generateRandomString(10) + ".png"
 	newFile, err := os.Create(filePath)
 	if err != nil {
-		slog.Error("Failed to create file: " + err.Error())
+		slog.Error("Failed to create file: ", "error", err)
 		return "", err
 	}
 
@@ -37,7 +37,7 @@ func (f *FileManager) SaveImage(img io.Reader, name string) (string, error) {
 
 	_, err = io.Copy(newFile, img)
 	if err != nil {
-		slog.Error("Failed to copy image: " + err.Error())
+		slog.Error("Failed to copy image: ", "error", err)
 		return "", err
 	}
 

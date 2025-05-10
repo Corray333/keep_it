@@ -31,13 +31,13 @@ func (t *Transport) Run() {
 	t.Bot.MessageNew(func(ctx context.Context, obj events.MessageNewObject) {
 		message := obj.Message
 		if err := t.service.ParseMessage(ctx, &message); err != nil {
-			slog.Error("Error parsing message: " + err.Error())
+			slog.Error("Error parsing message: ", "error", err)
 		}
 	})
 
 	// Запускаем Long Poll
 	fmt.Println("Bot started")
 	if err := t.Bot.Run(); err != nil {
-		slog.Error("Error running bot: " + err.Error())
+		slog.Error("Error running bot: ", "error", err)
 	}
 }

@@ -10,9 +10,9 @@ defineProps<{
 
 <template>
     <p>
-        <span v-if="element.rich_text.meta">
+        <span v-if="element.rich_text.meta && element.rich_text.meta.length">
             <span>{{ element.rich_text.plain_text.substring(0, element.rich_text.meta[0].offset) }}</span>
-            <span 
+            <span
             v-for="(piece, i) of element.rich_text.meta" :key="i">
                 <a v-if="piece.link" :href="piece.link" target="_blank">
                     <span

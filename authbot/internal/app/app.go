@@ -63,14 +63,14 @@ func (app *App) Run() {
 
 				decodedArgs, err := base64.StdEncoding.DecodeString(args_b64)
 				if err != nil {
-					slog.Error("decode error:" + err.Error())
+					slog.Error("decode error:", "error", err)
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, we have some internal problems😢 Please, try to log in later.")
 					bot.Send(msg)
 					continue
 				}
 				var query types.CodeQuery
 				if err := json.Unmarshal(decodedArgs, &query); err != nil {
-					slog.Error("decoding error: " + err.Error())
+					slog.Error("decoding error: ", "error", err)
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, we have some internal problems😢 Please, try to log in later.")
 					bot.Send(msg)
 					continue
@@ -87,7 +87,7 @@ func (app *App) Run() {
 				query.Code = utils.GenerateVerificationCode()
 
 				if err := app.Storage.SetUserRequest(&query); err != nil {
-					slog.Error("error while saving user request in redis: " + err.Error())
+					slog.Error("error while saving user request in redis: ", "error", err)
 					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Sorry, we have some internal problems😢 Please, try to log in later.")
 					bot.Send(msg)
 					continue
@@ -113,7 +113,7 @@ func (app *App) Run() {
 			// }
 			// marshalled, err := json.Marshal(orig)
 			// if err != nil {
-			// 	slog.Error("error while marshaling original message: " + err.Error())
+			// 	slog.Error("error while marshaling original message: ", "error", err)
 			// 	continue
 			// }
 			// note := types.Note{
